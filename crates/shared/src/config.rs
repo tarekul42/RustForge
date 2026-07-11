@@ -20,6 +20,10 @@ pub struct Config {
     /// Observability (logging, metrics, tracing) configuration.
     #[serde(default)]
     pub observability: ObservabilityConfig,
+
+    /// Allowed CORS origins. Empty = allow all (development).
+    #[serde(default)]
+    pub allowed_origins: Option<Vec<String>>,
 }
 
 /// Server bind settings.

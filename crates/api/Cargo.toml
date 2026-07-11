@@ -20,6 +20,9 @@ metrics.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+chrono.workspace = true
+cookie.workspace = true
+sqlx.workspace = true
 
 [dev-dependencies]
 http-body-util = "0.1"

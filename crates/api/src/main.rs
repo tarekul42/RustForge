@@ -2,8 +2,10 @@
 #![doc = "API binary: HTTP server entry point for the Skill Workshop Platform."]
 
 use std::net::SocketAddr;
+use std::sync::Arc;
 use std::time::Duration;
 use sw_api::app::build_app;
+use sw_api::state::AppState;
 use sw_shared::config::Config;
 use tokio::net::TcpListener;
 use tokio::signal;
@@ -18,12 +20,19 @@ async fn main() {
     let config = Config::load();
 
     sw_shared::logging::init(&config.observability);
-
     sw_shared::metrics::init();
-
     sw_shared::metrics::register_descriptions();
 
-    let app = build_app();
+    let pool = sqlx::postgres::PgPoolOptions::new()
+        .max_connections(config.database.max_connections)
+        .connect(&config.database.url)
+        .await
+        .unwrap_or_else(|e| {
+            panic!("Failed to connect to database: {e}");
+        });
+
+    let state = Arc::new(AppState::new(config.clone(), pool));
+    let app = build_app(Some(state));
 
     let addr = SocketAddr::new(
         config.server.host.parse().expect("Invalid host address"),
@@ -35,7 +44,7 @@ async fn main() {
 
     info!("Server listening on {addr}");
 
-    axum::serve(listener, app)
+    axum::serve(listener, app.into_make_service())
         .with_graceful_shutdown(shutdown_signal())
         .await
         .unwrap_or_else(|e| {

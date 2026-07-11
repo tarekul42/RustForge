@@ -10,3 +10,10 @@ sw-domain = { path = "../domain" }
 sw-shared = { path = "../shared" }
 thiserror.workspace = true
 tracing.workspace = true
+tokio.workspace = true
+async-trait.workspace = true
+serde.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+hex.workspace = true
+rand.workspace = true
