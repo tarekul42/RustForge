@@ -62,6 +62,7 @@ macro_rules! id_type {
 
 id_type!(UserId, "user");
 id_type!(WorkshopId, "workshop");
+id_type!(WorkshopImageId, "workshop_image");
 id_type!(EnrollmentId, "enrollment");
 id_type!(PaymentId, "payment");
 id_type!(ReviewId, "review");

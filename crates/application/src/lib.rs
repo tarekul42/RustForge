@@ -5,3 +5,5 @@
 pub mod error;
 /// Use-case services organized by domain.
 pub mod services;
+/// Slug generation and uniqueness utilities.
+pub mod slug;

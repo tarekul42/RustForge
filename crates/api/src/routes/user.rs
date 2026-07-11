@@ -1,6 +1,6 @@
 use axum::{
-    extract::Extension,
-    routing::{get, patch},
+    extract::{Extension, Path},
+    routing::{delete, get, patch},
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
@@ -16,13 +16,13 @@ pub fn router() -> Router {
         .route("/me", get(get_profile))
         .route("/me", patch(update_profile))
         .route("/me/registrations", get(list_registrations))
+        .route("/", get(list_users))
+        .route("/:id", get(get_user))
+        .route("/:id", patch(admin_update_user))
+        .route("/:id", delete(admin_delete_user))
 }
 
-// ---------------------------------------------------------------------------
-// Request / Response types
-// ---------------------------------------------------------------------------
-
-/// Response body for `GET /users/me`.
+/// Response body for `GET /users/me` and `GET /users/:id`.
 #[derive(Serialize)]
 pub struct UserProfileResponse {
     /// The user's unique ID.
@@ -65,11 +65,21 @@ pub struct RegistrationResponse {
     pub registered_at: String,
 }
 
-// ---------------------------------------------------------------------------
-// Handlers
-// ---------------------------------------------------------------------------
+// Admin request/response types
 
-/// Return the full profile of the authenticated user.
+#[derive(Deserialize)]
+#[allow(dead_code)]
+struct AdminUpdateUserRequest {
+    name: Option<String>,
+    role: Option<String>,
+    status: Option<String>,
+    phone: Option<String>,
+    age: Option<i16>,
+    address: Option<String>,
+    expertise: Option<String>,
+    bio: Option<String>,
+}
+
 async fn get_profile(
     Extension(state): Extension<Arc<AppState>>,
     headers: axum::http::HeaderMap,
@@ -88,7 +98,6 @@ async fn get_profile(
     }))
 }
 
-/// Update profile fields (name, picture_url) for the authenticated user.
 async fn update_profile(
     Extension(state): Extension<Arc<AppState>>,
     headers: axum::http::HeaderMap,
@@ -103,7 +112,6 @@ async fn update_profile(
             payload.picture_url.as_deref(),
         )
         .await?;
-
     Ok(Json(UserProfileResponse {
         user_id: user.id.to_string(),
         email: user.email.to_string(),
@@ -116,7 +124,6 @@ async fn update_profile(
     }))
 }
 
-/// List workshop registrations for the authenticated user.
 async fn list_registrations(
     Extension(state): Extension<Arc<AppState>>,
     headers: axum::http::HeaderMap,
@@ -124,4 +131,69 @@ async fn list_registrations(
     let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
     let _registrations = state.auth_service.list_registrations(user_id).await?;
     Ok(Json(Vec::new()))
+}
+
+async fn list_users(
+    Extension(state): Extension<Arc<AppState>>,
+    headers: axum::http::HeaderMap,
+) -> Result<Json<Vec<UserProfileResponse>>, ApiError> {
+    let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
+    let user = state.auth_service.get_user(user_id).await?;
+    if !user.is_admin() {
+        return Err(ApiError::Unauthorized("Admin access required".to_string()));
+    }
+    // TODO: implement find_all on UserRepository
+    Ok(Json(Vec::new()))
+}
+
+async fn get_user(
+    Extension(state): Extension<Arc<AppState>>,
+    headers: axum::http::HeaderMap,
+    Path(id): Path<uuid::Uuid>,
+) -> Result<Json<UserProfileResponse>, ApiError> {
+    let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
+    let caller = state.auth_service.get_user(user_id).await?;
+    if !caller.is_admin() {
+        return Err(ApiError::Unauthorized("Admin access required".to_string()));
+    }
+
+    let target_id = sw_domain::value_objects::ids::UserId::from_uuid(id);
+    let target = state.auth_service.get_user(target_id).await?;
+    Ok(Json(UserProfileResponse {
+        user_id: target.id.to_string(),
+        email: target.email.to_string(),
+        name: Some(target.name),
+        picture_url: target.picture_url,
+        role: target.role.as_str().to_string(),
+        is_verified: target.is_verified,
+        created_at: target.created_at.to_rfc3339(),
+        updated_at: target.updated_at.to_rfc3339(),
+    }))
+}
+
+async fn admin_update_user(
+    Extension(state): Extension<Arc<AppState>>,
+    headers: axum::http::HeaderMap,
+    Path(_id): Path<uuid::Uuid>,
+    Json(_payload): Json<AdminUpdateUserRequest>,
+) -> Result<Json<UserProfileResponse>, ApiError> {
+    let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
+    let user = state.auth_service.get_user(user_id).await?;
+    if !user.is_admin() {
+        return Err(ApiError::Unauthorized("Admin access required".to_string()));
+    }
+    Err(ApiError::NotImplemented)
+}
+
+async fn admin_delete_user(
+    Extension(state): Extension<Arc<AppState>>,
+    headers: axum::http::HeaderMap,
+    Path(_id): Path<uuid::Uuid>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
+    let user = state.auth_service.get_user(user_id).await?;
+    if !user.is_admin() {
+        return Err(ApiError::Unauthorized("Admin access required".to_string()));
+    }
+    Err(ApiError::NotImplemented)
 }

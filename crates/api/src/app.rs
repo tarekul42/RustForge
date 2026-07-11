@@ -10,7 +10,7 @@ use tower_http::cors::{Any, CorsLayer};
 
 /// Build the full Axum application router with middleware and shared state.
 ///
-/// Pass `Some(state)` to enable stateful endpoints (auth, users).
+/// Pass `Some(state)` to enable stateful endpoints (auth, users, categories, workshops).
 /// Pass `None` to build a minimal router for testing health endpoints.
 pub fn build_app(state: Option<Arc<AppState>>) -> Router {
     let cors = CorsLayer::new()
@@ -26,6 +26,12 @@ pub fn build_app(state: Option<Arc<AppState>>) -> Router {
         router = router
             .nest("/api/v1/auth", routes::auth::router())
             .nest("/api/v1/users", routes::user::router())
+            .nest("/api/v1/categories", routes::category::router())
+            .nest("/api/v1/workshops", routes::workshop::router())
+            .nest(
+                "/api/v1/workshops/levels",
+                routes::workshop::levels::router(),
+            )
             .layer(axum::Extension(state));
     }
 

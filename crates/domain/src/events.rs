@@ -35,6 +35,36 @@ pub enum DomainEvent {
         /// The ID of the deleted user.
         user_id: UserId,
     },
+    /// A new category was created.
+    CategoryCreated {
+        /// The ID of the created category.
+        category_id: CategoryId,
+    },
+    /// A category's details were updated.
+    CategoryUpdated {
+        /// The ID of the updated category.
+        category_id: CategoryId,
+    },
+    /// A category was deleted.
+    CategoryDeleted {
+        /// The ID of the deleted category.
+        category_id: CategoryId,
+    },
+    /// A new level was created.
+    LevelCreated {
+        /// The ID of the created level.
+        level_id: LevelId,
+    },
+    /// A level was renamed.
+    LevelUpdated {
+        /// The ID of the updated level.
+        level_id: LevelId,
+    },
+    /// A level was deleted.
+    LevelDeleted {
+        /// The ID of the deleted level.
+        level_id: LevelId,
+    },
     /// A new workshop was created.
     WorkshopCreated {
         /// The ID of the created workshop.
@@ -120,6 +150,12 @@ impl DomainEvent {
             DomainEvent::PasswordChanged { .. } => "user.password_changed",
             DomainEvent::UserUpdated { .. } => "user.updated",
             DomainEvent::UserDeleted { .. } => "user.deleted",
+            DomainEvent::CategoryCreated { .. } => "category.created",
+            DomainEvent::CategoryUpdated { .. } => "category.updated",
+            DomainEvent::CategoryDeleted { .. } => "category.deleted",
+            DomainEvent::LevelCreated { .. } => "level.created",
+            DomainEvent::LevelUpdated { .. } => "level.updated",
+            DomainEvent::LevelDeleted { .. } => "level.deleted",
             DomainEvent::WorkshopCreated { .. } => "workshop.created",
             DomainEvent::WorkshopUpdated { .. } => "workshop.updated",
             DomainEvent::WorkshopDeleted { .. } => "workshop.deleted",
@@ -143,6 +179,12 @@ impl DomainEvent {
             | DomainEvent::PasswordChanged { .. }
             | DomainEvent::UserUpdated { .. }
             | DomainEvent::UserDeleted { .. } => "User",
+            DomainEvent::CategoryCreated { .. }
+            | DomainEvent::CategoryUpdated { .. }
+            | DomainEvent::CategoryDeleted { .. } => "Category",
+            DomainEvent::LevelCreated { .. }
+            | DomainEvent::LevelUpdated { .. }
+            | DomainEvent::LevelDeleted { .. } => "Level",
             DomainEvent::WorkshopCreated { .. }
             | DomainEvent::WorkshopUpdated { .. }
             | DomainEvent::WorkshopDeleted { .. } => "Workshop",

@@ -11,3 +11,5 @@ pub mod error;
 pub mod logging;
 /// Prometheus metrics exporter and descriptions.
 pub mod metrics;
+/// Object store trait for file storage (S3/MinIO).
+pub mod object_store;

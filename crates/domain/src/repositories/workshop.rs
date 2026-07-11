@@ -1,6 +1,6 @@
-use crate::aggregates::workshop::Workshop;
+use crate::aggregates::workshop::{Workshop, WorkshopImage};
 use crate::error::DomainError;
-use crate::value_objects::ids::WorkshopId;
+use crate::value_objects::ids::{WorkshopId, WorkshopImageId};
 
 /// Repository for persisting and retrieving [`Workshop`] aggregates.
 #[async_trait::async_trait]
@@ -15,4 +15,15 @@ pub trait WorkshopRepository: Send + Sync {
     async fn update(&self, workshop: &Workshop) -> Result<(), DomainError>;
     /// Delete a workshop by ID.
     async fn delete(&self, id: WorkshopId) -> Result<(), DomainError>;
+    /// Return all images associated with a workshop, ordered by creation time.
+    async fn get_images(&self, workshop_id: WorkshopId) -> Result<Vec<WorkshopImage>, DomainError>;
+    /// Attach an image record to a workshop.
+    async fn add_image(
+        &self,
+        workshop_id: WorkshopId,
+        url: &str,
+        s3_key: &str,
+    ) -> Result<WorkshopImage, DomainError>;
+    /// Remove an image record from a workshop.
+    async fn remove_image(&self, image_id: WorkshopImageId) -> Result<(), DomainError>;
 }

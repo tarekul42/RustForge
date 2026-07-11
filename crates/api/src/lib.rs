@@ -13,3 +13,5 @@ pub mod middleware;
 pub mod routes;
 /// Shared application state accessible from handlers.
 pub mod state;
+/// File upload validation and S3 helper utilities.
+pub mod upload;

@@ -22,3 +22,4 @@ sha2.workspace = true
 rand.workspace = true
 subtle.workspace = true
 hex.workspace = true
+async-trait.workspace = true

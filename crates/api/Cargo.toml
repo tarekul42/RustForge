@@ -23,6 +23,8 @@ thiserror.workspace = true
 chrono.workspace = true
 cookie.workspace = true
 sqlx.workspace = true
+infer.workspace = true
+reqwest.workspace = true
 
 [dev-dependencies]
 http-body-util = "0.1"

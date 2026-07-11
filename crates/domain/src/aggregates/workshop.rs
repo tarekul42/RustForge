@@ -1,5 +1,5 @@
 use crate::events::DomainEvent;
-use crate::value_objects::ids::{CategoryId, LevelId, UserId, WorkshopId};
+use crate::value_objects::ids::{CategoryId, LevelId, UserId, WorkshopId, WorkshopImageId};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -104,6 +104,21 @@ impl Workshop {
         self.max_seats
             .map(|max| (max - self.current_enrollments).max(0))
     }
+}
+
+/// A photo associated with a workshop, typically stored in S3/MinIO.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WorkshopImage {
+    /// Unique identifier for this image.
+    pub id: WorkshopImageId,
+    /// The workshop this image belongs to.
+    pub workshop_id: WorkshopId,
+    /// Public URL for the image.
+    pub url: String,
+    /// The S3/MinIO object key.
+    pub s3_key: String,
+    /// When the image was uploaded.
+    pub created_at: DateTime<Utc>,
 }
 
 #[cfg(test)]
