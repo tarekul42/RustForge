@@ -51,4 +51,6 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-audit
-      - run: cargo audit
+      # RUSTSEC-2023-0071: rsa 0.9.10 (Marvin Attack) is pulled by sqlx-mysql which
+      # is not compiled — we only use the `postgres` feature of sqlx.
+      - run: cargo audit --ignore RUSTSEC-2023-0071
