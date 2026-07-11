@@ -1,0 +1,11 @@
+[package]
+name = "sw-worker"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+sw-shared = { path = "../shared" }
+tokio.workspace = true
+tracing.workspace = true

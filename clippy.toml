@@ -1,0 +1,2 @@
+# No extra clippy config needed for Phase 0
+# Warnings are errors via CLI flags

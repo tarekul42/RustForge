@@ -1,0 +1,13 @@
+/target
+.env
+*.swp
+*.swo
+.idea/
+.vscode/
+*.sqlx
+
+IMPLEMENTATION_BLUEPRINT.md
+Rust_Curriculum/
+MASTER_BOOTSTRAP_PROMPT.md
+
+AGENT.md

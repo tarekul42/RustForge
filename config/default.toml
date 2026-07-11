@@ -1,0 +1,14 @@
+[server]
+host = "0.0.0.0"
+port = 5000
+workers = 0
+
+[database]
+url = ""
+max_connections = 10
+statement_timeout_secs = 30
+
+[observability]
+log_level = "info"
+metrics_port = 5001
+trace_sample_ratio = 1.0

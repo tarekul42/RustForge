@@ -1,0 +1,13 @@
+[package]
+name = "sw-infrastructure"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+sw-domain = { path = "../domain" }
+sw-shared = { path = "../shared" }
+thiserror.workspace = true
+tracing.workspace = true
+tokio.workspace = true
