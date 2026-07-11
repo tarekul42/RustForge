@@ -7,4 +7,9 @@ license.workspace = true
 
 [dependencies]
 sw-shared = { path = "../shared" }
+serde.workspace = true
 thiserror.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+async-trait.workspace = true
+serde_json.workspace = true

@@ -11,3 +11,8 @@ sw-shared = { path = "../shared" }
 thiserror.workspace = true
 tracing.workspace = true
 tokio.workspace = true
+sqlx.workspace = true
+chrono.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+async-trait.workspace = true
