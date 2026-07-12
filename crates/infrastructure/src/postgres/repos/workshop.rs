@@ -179,6 +179,38 @@ impl WorkshopRepository for PostgresWorkshopRepository {
         .map_err(|e| DomainError::infrastructure(format!("failed to list workshops: {e}")))?;
         rows.into_iter().map(WorkshopRow::into_domain).collect()
     }
+
+    async fn reserve_seat_atomic(
+        &self,
+        workshop_id: WorkshopId,
+    ) -> Result<Option<Workshop>, DomainError> {
+        let row = sqlx::query_as::<_, WorkshopRow>(
+            r#"UPDATE workshops
+               SET current_enrollments = current_enrollments + 1, updated_at = NOW()
+               WHERE id = $1 AND (max_seats IS NULL OR current_enrollments < max_seats)
+               RETURNING id, title, slug, description, location, price_cents,
+                         start_date, end_date, max_seats, current_enrollments, min_age,
+                         category_id, level_id, created_by, created_at, updated_at"#,
+        )
+        .bind(workshop_id.into_uuid())
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| DomainError::infrastructure(format!("failed to reserve seat: {e}")))?;
+        row.map(WorkshopRow::into_domain).transpose()
+    }
+
+    async fn release_seat_atomic(&self, workshop_id: WorkshopId) -> Result<(), DomainError> {
+        sqlx::query(
+            r#"UPDATE workshops
+               SET current_enrollments = GREATEST(current_enrollments - 1, 0), updated_at = NOW()
+               WHERE id = $1 AND current_enrollments > 0"#,
+        )
+        .bind(workshop_id.into_uuid())
+        .execute(&self.pool)
+        .await
+        .map_err(|e| DomainError::infrastructure(format!("failed to release seat: {e}")))?;
+        Ok(())
+    }
 }
 
 #[derive(sqlx::FromRow)]

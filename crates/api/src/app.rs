@@ -28,6 +28,8 @@ pub fn build_app(state: Option<Arc<AppState>>) -> Router {
             .nest("/api/v1/auth", routes::auth::router())
             .nest("/api/v1/users", routes::user::router())
             .nest("/api/v1/categories", routes::category::router())
+            .nest("/api/v1/enrollments", routes::enrollment::router())
+            .nest("/api/v1/payments", routes::payment::router())
             .nest("/api/v1/workshops", routes::workshop::router())
             .nest(
                 "/api/v1/workshops/levels",

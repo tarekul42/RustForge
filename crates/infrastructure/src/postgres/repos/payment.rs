@@ -88,6 +88,36 @@ impl PaymentRepository for PostgresPaymentRepository {
         row.map(PaymentRow::into_domain).transpose()
     }
 
+    async fn update_status_cas(
+        &self,
+        id: PaymentId,
+        from_status: &str,
+        to_status: &str,
+    ) -> Result<bool, DomainError> {
+        let rows = sqlx::query(
+            r#"UPDATE payments SET status = $3, updated_at = NOW()
+               WHERE id = $1 AND status = $2"#,
+        )
+        .bind(id.into_uuid())
+        .bind(from_status)
+        .bind(to_status)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| DomainError::infrastructure(format!("failed to CAS update payment: {e}")))?;
+        Ok(rows.rows_affected() > 0)
+    }
+
+    async fn acquire_advisory_lock(&self, key: &str) -> Result<(), DomainError> {
+        sqlx::query("SELECT pg_advisory_xact_lock(hashtext($1))")
+            .bind(key)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| {
+                DomainError::infrastructure(format!("failed to acquire advisory lock: {e}"))
+            })?;
+        Ok(())
+    }
+
     async fn update(&self, payment: &Payment) -> Result<(), DomainError> {
         sqlx::query(
             r#"UPDATE payments SET amount_cents = $2, payment_gateway_data = $3,

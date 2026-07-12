@@ -24,6 +24,10 @@ pub struct Config {
     /// Allowed CORS origins. Empty = allow all (development).
     #[serde(default)]
     pub allowed_origins: Option<Vec<String>>,
+
+    /// Payment gateway (SSLCommerz) configuration.
+    #[serde(default)]
+    pub payment: PaymentConfig,
 }
 
 /// Server bind settings.
@@ -76,6 +80,50 @@ pub struct ObservabilityConfig {
     /// Trace sample ratio (0.0–1.0).
     #[serde(default = "default_trace_sample_ratio")]
     pub trace_sample_ratio: f64,
+}
+
+/// Payment gateway (SSLCommerz) configuration.
+#[derive(Debug, Deserialize, Clone)]
+pub struct PaymentConfig {
+    /// SSLCommerz store ID.
+    #[serde(default)]
+    pub store_id: String,
+    /// SSLCommerz store password.
+    #[serde(default)]
+    pub store_passwd: String,
+    /// Base URL (sandbox or production).
+    #[serde(default = "default_payment_gateway_url")]
+    pub base_url: String,
+    /// Success callback URL.
+    #[serde(default)]
+    pub success_url: String,
+    /// Failure callback URL.
+    #[serde(default)]
+    pub fail_url: String,
+    /// Cancel callback URL.
+    #[serde(default)]
+    pub cancel_url: String,
+    /// IPN notification URL.
+    #[serde(default)]
+    pub ipn_url: String,
+}
+
+impl Default for PaymentConfig {
+    fn default() -> Self {
+        Self {
+            store_id: String::new(),
+            store_passwd: String::new(),
+            base_url: default_payment_gateway_url(),
+            success_url: String::new(),
+            fail_url: String::new(),
+            cancel_url: String::new(),
+            ipn_url: String::new(),
+        }
+    }
+}
+
+fn default_payment_gateway_url() -> String {
+    "https://sandbox.sslcommerz.com".to_string()
 }
 
 fn default_host() -> String {

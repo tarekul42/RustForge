@@ -8,6 +8,7 @@ license.workspace = true
 [dependencies]
 sw-domain = { path = "../domain" }
 sw-shared = { path = "../shared" }
+serde.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 tokio.workspace = true
@@ -18,3 +19,6 @@ uuid.workspace = true
 async-trait.workspace = true
 aws-sdk-s3.workspace = true
 aws-config.workspace = true
+reqwest.workspace = true
+sha2.workspace = true
+hex.workspace = true

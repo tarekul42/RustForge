@@ -48,6 +48,20 @@ impl EnrollmentRepository for PostgresEnrollmentRepository {
         row.map(EnrollmentRow::into_domain).transpose()
     }
 
+    async fn find_by_user(&self, user_id: UserId) -> Result<Vec<Enrollment>, DomainError> {
+        let rows = sqlx::query_as::<_, EnrollmentRow>(
+            r#"SELECT id, user_id, workshop_id, payment_id, student_count, status, created_at, updated_at
+               FROM enrollments
+               WHERE user_id = $1
+               ORDER BY created_at DESC"#,
+        )
+        .bind(user_id.into_uuid())
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| DomainError::infrastructure(format!("failed to find enrollments: {e}")))?;
+        rows.into_iter().map(EnrollmentRow::into_domain).collect()
+    }
+
     async fn find_by_user_and_workshop(
         &self,
         user_id: UserId,
@@ -81,6 +95,41 @@ impl EnrollmentRepository for PostgresEnrollmentRepository {
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to update enrollment: {e}")))?;
         Ok(())
+    }
+
+    async fn update_status_cas(
+        &self,
+        id: EnrollmentId,
+        from_status: &str,
+        to_status: &str,
+    ) -> Result<bool, DomainError> {
+        let rows = sqlx::query(
+            r#"UPDATE enrollments SET status = $3, updated_at = NOW()
+               WHERE id = $1 AND status = $2"#,
+        )
+        .bind(id.into_uuid())
+        .bind(from_status)
+        .bind(to_status)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            DomainError::infrastructure(format!("failed to CAS update enrollment: {e}"))
+        })?;
+        Ok(rows.rows_affected() > 0)
+    }
+
+    async fn count_active_for_workshop(&self, workshop_id: WorkshopId) -> Result<i64, DomainError> {
+        let (count,): (i64,) = sqlx::query_as(
+            r#"SELECT COUNT(*) FROM enrollments
+               WHERE workshop_id = $1 AND status IN ('pending', 'complete')"#,
+        )
+        .bind(workshop_id.into_uuid())
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| {
+            DomainError::infrastructure(format!("failed to count active enrollments: {e}"))
+        })?;
+        Ok(count)
     }
 
     async fn delete(&self, id: EnrollmentId) -> Result<(), DomainError> {

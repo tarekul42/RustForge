@@ -28,4 +28,12 @@ pub trait WorkshopRepository: Send + Sync {
     async fn remove_image(&self, image_id: WorkshopImageId) -> Result<(), DomainError>;
     /// Return all workshops, ordered by creation date descending.
     async fn find_all(&self) -> Result<Vec<Workshop>, DomainError>;
+    /// Atomically reserve a seat: increment `current_enrollments` only if under
+    /// `max_seats`. Returns the updated workshop, or `None` if the workshop is full.
+    async fn reserve_seat_atomic(
+        &self,
+        workshop_id: WorkshopId,
+    ) -> Result<Option<Workshop>, DomainError>;
+    /// Atomically release a seat: decrement `current_enrollments` (floor 0).
+    async fn release_seat_atomic(&self, workshop_id: WorkshopId) -> Result<(), DomainError>;
 }

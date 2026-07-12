@@ -12,3 +12,12 @@ statement_timeout_secs = 30
 log_level = "info"
 metrics_port = 5001
 trace_sample_ratio = 1.0
+
+[payment]
+store_id = ""
+store_passwd = ""
+base_url = "https://sandbox.sslcommerz.com"
+success_url = ""
+fail_url = ""
+cancel_url = ""
+ipn_url = ""

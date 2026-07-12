@@ -129,6 +129,24 @@ impl Enrollment {
         }
     }
 
+    /// Cancel a completed enrollment (for refunds).
+    /// Only allowed when the current status is `Complete`.
+    pub fn cancel_refund(&mut self) -> Result<DomainEvent, crate::error::DomainError> {
+        match self.status {
+            EnrollmentStatus::Complete => {
+                self.status = EnrollmentStatus::Cancelled;
+                self.updated_at = Utc::now();
+                Ok(DomainEvent::EnrollmentCancelled {
+                    enrollment_id: self.id,
+                })
+            }
+            _ => Err(crate::error::DomainError::invalid_transition(
+                self.status.as_str(),
+                "cancelled",
+            )),
+        }
+    }
+
     /// Transition the enrollment from Pending to Failed.
     ///
     /// Returns an error if the current status is not Pending.
@@ -200,6 +218,20 @@ mod tests {
         let mut enrollment = make_enrollment();
         enrollment.fail().unwrap();
         assert_eq!(enrollment.status, EnrollmentStatus::Failed);
+    }
+
+    #[test]
+    fn cancel_refund_complete_succeeds() {
+        let mut enrollment = make_enrollment();
+        enrollment.complete().unwrap();
+        enrollment.cancel_refund().unwrap();
+        assert_eq!(enrollment.status, EnrollmentStatus::Cancelled);
+    }
+
+    #[test]
+    fn cancel_refund_pending_fails() {
+        let mut enrollment = make_enrollment();
+        assert!(enrollment.cancel_refund().is_err());
     }
 
     #[test]

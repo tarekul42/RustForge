@@ -19,6 +19,17 @@ pub trait PaymentRepository: Send + Sync {
         &self,
         transaction_id: &str,
     ) -> Result<Option<Payment>, DomainError>;
+    /// Update payment status only if the current status matches `from_status`.
+    /// Returns `true` if the row was updated, `false` if no row matched (CAS miss).
+    async fn update_status_cas(
+        &self,
+        id: crate::value_objects::ids::PaymentId,
+        from_status: &str,
+        to_status: &str,
+    ) -> Result<bool, DomainError>;
+    /// Acquire a Postgres advisory lock (transaction-scoped) for the given key.
+    /// This serializes concurrent payment validations (e.g., IPN + success-URL race).
+    async fn acquire_advisory_lock(&self, key: &str) -> Result<(), DomainError>;
     /// Persist changes to an existing payment.
     async fn update(&self, payment: &Payment) -> Result<(), DomainError>;
 }

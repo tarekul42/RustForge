@@ -2,5 +2,7 @@
 
 /// S3/MinIO object store implementation.
 pub mod object_store;
+/// Payment gateway adapters (SSLCommerz).
+pub mod payment;
 /// PostgreSQL connection pool and repository implementations.
 pub mod postgres;
