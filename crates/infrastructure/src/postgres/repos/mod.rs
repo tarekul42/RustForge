@@ -2,6 +2,8 @@
 pub mod audit;
 /// SQLx implementation of `CategoryRepository`.
 pub mod category;
+/// SQLx implementation of `ContactRepository`.
+pub mod contact;
 /// SQLx implementation of `EnrollmentRepository`.
 pub mod enrollment;
 /// SQLx implementation of `EventStore`.
@@ -18,6 +20,8 @@ pub mod payment;
 pub mod review;
 /// SQLx implementation of `SessionRepository`.
 pub mod session;
+/// SQLx implementation of `StatsRepository`.
+pub mod stats;
 /// SQLx implementation of `UserRepository`.
 pub mod user;
 /// SQLx implementation of `WorkshopRepository`.

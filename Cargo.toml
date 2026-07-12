@@ -43,12 +43,6 @@ cookie = "0.18"
 aws-sdk-s3 = { version = "1", features = ["rt-tokio"] }
 aws-config = { version = "1", features = ["behavior-version-latest"] }
 infer = "0.19"
-
-
-
-
-
-
-
+moka = { version = "0.12", features = ["future"] }
 
 

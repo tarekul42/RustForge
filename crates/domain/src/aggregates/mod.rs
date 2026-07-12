@@ -1,5 +1,7 @@
 /// Category aggregate — classification for workshops.
 pub mod category;
+/// Contact aggregate — form submission records.
+pub mod contact;
 /// Enrollment aggregate — links user to workshop.
 pub mod enrollment;
 /// Difficulty level aggregate.

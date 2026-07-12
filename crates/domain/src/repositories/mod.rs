@@ -2,6 +2,8 @@
 pub mod audit;
 /// Repository trait for Category aggregate.
 pub mod category;
+/// Repository trait for Contact aggregate.
+pub mod contact;
 /// Repository trait for Enrollment aggregate.
 pub mod enrollment;
 /// Repository trait for background jobs.
@@ -16,6 +18,8 @@ pub mod payment;
 pub mod review;
 /// Repository trait for Session entity.
 pub mod session;
+/// Repository trait for platform stats (read-model).
+pub mod stats;
 /// Repository trait for User aggregate.
 pub mod user;
 /// Repository trait for Workshop aggregate.

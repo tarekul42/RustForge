@@ -124,9 +124,15 @@ impl<
             .complete()
             .map_err(|e| ApplicationError::internal(e.to_string()))?;
 
-        self.enrollment_repo
+        let enrollment_updated = self
+            .enrollment_repo
             .update_status_cas(enrollment.id, "pending", enrollment.status.as_str())
             .await?;
+        if !enrollment_updated {
+            return Err(ApplicationError::conflict(
+                "Enrollment status changed before payment completion",
+            ));
+        }
 
         self.payment_repo.update(&payment).await?;
         self.publish_event(event).await?;
@@ -178,9 +184,15 @@ impl<
             .fail()
             .map_err(|e| ApplicationError::internal(e.to_string()))?;
 
-        self.enrollment_repo
+        let enrollment_updated = self
+            .enrollment_repo
             .update_status_cas(enrollment.id, "pending", "failed")
             .await?;
+        if !enrollment_updated {
+            return Err(ApplicationError::conflict(
+                "Enrollment status changed before payment failure",
+            ));
+        }
 
         self.workshop_repo
             .release_seat_atomic(enrollment.workshop_id)
@@ -227,9 +239,15 @@ impl<
             .cancel()
             .map_err(|e| ApplicationError::internal(e.to_string()))?;
 
-        self.enrollment_repo
+        let enrollment_updated = self
+            .enrollment_repo
             .update_status_cas(enrollment.id, "pending", "cancelled")
             .await?;
+        if !enrollment_updated {
+            return Err(ApplicationError::conflict(
+                "Enrollment status changed before payment cancellation",
+            ));
+        }
 
         self.workshop_repo
             .release_seat_atomic(enrollment.workshop_id)
@@ -331,10 +349,15 @@ impl<
             .cancel_refund()
             .map_err(|e| ApplicationError::internal(e.to_string()))?;
 
-        self.enrollment_repo
+        let enrollment_updated = self
+            .enrollment_repo
             .update_status_cas(enrollment.id, "complete", "cancelled")
-            .await
-            .ok();
+            .await?;
+        if !enrollment_updated {
+            return Err(ApplicationError::conflict(
+                "Enrollment status changed before refund",
+            ));
+        }
 
         self.workshop_repo
             .release_seat_atomic(enrollment.workshop_id)
