@@ -176,7 +176,13 @@ async fn update_workshop(
     Path(id): Path<uuid::Uuid>,
     Json(payload): Json<UpdateWorkshopRequest>,
 ) -> Result<Json<WorkshopResponse>, ApiError> {
-    let (_session_id, _user_id) = session::resolve_session(&headers, &state).await?;
+    let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
+    let user = state.auth_service.get_user(user_id).await?;
+    if !user.can_manage_workshops() {
+        return Err(ApiError::Unauthorized(
+            "Insufficient permissions to update workshops".to_string(),
+        ));
+    }
 
     let workshop_id = WorkshopId::from_uuid(id);
     let category_id = payload
@@ -231,7 +237,13 @@ async fn delete_workshop(
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,
 ) -> Result<Json<serde_json::Value>, ApiError> {
-    let (_session_id, _user_id) = session::resolve_session(&headers, &state).await?;
+    let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
+    let user = state.auth_service.get_user(user_id).await?;
+    if !user.can_manage_workshops() {
+        return Err(ApiError::Unauthorized(
+            "Insufficient permissions to delete workshops".to_string(),
+        ));
+    }
 
     let workshop_id = WorkshopId::from_uuid(id);
     state.workshop_service.delete(workshop_id).await?;
@@ -244,7 +256,13 @@ async fn add_workshop_image(
     Path(id): Path<uuid::Uuid>,
     Json(payload): Json<AddImageRequest>,
 ) -> Result<Json<WorkshopImageResponse>, ApiError> {
-    let (_session_id, _user_id) = session::resolve_session(&headers, &state).await?;
+    let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
+    let user = state.auth_service.get_user(user_id).await?;
+    if !user.can_manage_workshops() {
+        return Err(ApiError::Unauthorized(
+            "Insufficient permissions to manage workshop images".to_string(),
+        ));
+    }
 
     let workshop_id = WorkshopId::from_uuid(id);
     let image = state
@@ -264,7 +282,13 @@ async fn remove_workshop_image(
     headers: axum::http::HeaderMap,
     Path((_workshop_id, image_id)): Path<(uuid::Uuid, uuid::Uuid)>,
 ) -> Result<Json<serde_json::Value>, ApiError> {
-    let (_session_id, _user_id) = session::resolve_session(&headers, &state).await?;
+    let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
+    let user = state.auth_service.get_user(user_id).await?;
+    if !user.can_manage_workshops() {
+        return Err(ApiError::Unauthorized(
+            "Insufficient permissions to manage workshop images".to_string(),
+        ));
+    }
 
     state
         .workshop_service

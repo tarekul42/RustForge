@@ -17,15 +17,18 @@ fn with_session_cookie<T: Serialize>(
     data: T,
     token: &str,
     expires_at: &chrono::DateTime<chrono::Utc>,
-) -> Response {
+) -> Result<Response, ApiError> {
+    let max_age = (*expires_at - chrono::Utc::now()).num_seconds().max(0);
     let cookie = format!(
         "session={}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age={}",
-        token,
-        (*expires_at - chrono::Utc::now()).num_seconds().max(0)
+        token, max_age,
     );
     let mut headers = HeaderMap::new();
-    headers.insert("Set-Cookie", cookie.parse().unwrap());
-    (headers, Json(data)).into_response()
+    headers.insert(
+        "Set-Cookie",
+        cookie.parse().map_err(|_| ApiError::Internal)?,
+    );
+    Ok((headers, Json(data)).into_response())
 }
 
 /// Build the auth router — all paths are relative to `/api/v1/auth`.
@@ -137,7 +140,7 @@ async fn register(
         )
         .await?;
 
-    Ok(with_session_cookie(
+    with_session_cookie(
         RegisterResponse {
             user_id: result.user.id.to_string(),
             session_token: result.session_token.clone(),
@@ -145,7 +148,7 @@ async fn register(
         },
         &result.session_token,
         &result.session_expires_at,
-    ))
+    )
 }
 
 /// Log in with email and password.
@@ -158,7 +161,7 @@ async fn login(
         .login(&payload.email, &payload.password)
         .await?;
 
-    Ok(with_session_cookie(
+    with_session_cookie(
         LoginResponse {
             user_id: result.user.id.to_string(),
             session_token: result.session_token.clone(),
@@ -166,7 +169,7 @@ async fn login(
         },
         &result.session_token,
         &result.session_expires_at,
-    ))
+    )
 }
 
 /// Request an OTP code to be sent to the user's email.

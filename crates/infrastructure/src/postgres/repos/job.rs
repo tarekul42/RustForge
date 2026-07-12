@@ -1,6 +1,6 @@
 use sqlx::PgPool;
 use sw_domain::error::DomainError;
-use sw_domain::repositories::job::JobRepository;
+use sw_domain::repositories::job::{JobInfo, JobRepository};
 use sw_domain::value_objects::ids::JobId;
 
 /// SQLx-backed implementation of [`JobRepository`].
@@ -35,8 +35,8 @@ impl JobRepository for PostgresJobRepository {
         Ok(())
     }
 
-    async fn claim_next(&self, worker_id: uuid::Uuid) -> Result<Option<JobId>, DomainError> {
-        let row = sqlx::query_as::<_, JobIdRow>(
+    async fn claim_next(&self, worker_id: uuid::Uuid) -> Result<Option<JobInfo>, DomainError> {
+        let row = sqlx::query_as::<_, JobRow>(
             r#"UPDATE jobs SET status = 'running', locked_by = $1, locked_at = NOW(), attempts = attempts + 1
                WHERE id = (
                    SELECT id FROM jobs
@@ -45,13 +45,17 @@ impl JobRepository for PostgresJobRepository {
                    ORDER BY run_at ASC
                    LIMIT 1 FOR UPDATE SKIP LOCKED
                )
-               RETURNING id"#,
+               RETURNING id, job_type, payload"#,
         )
         .bind(worker_id)
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to claim job: {e}")))?;
-        Ok(row.map(|r| JobId::from_uuid(r.id)))
+        Ok(row.map(|r| JobInfo {
+            id: JobId::from_uuid(r.id),
+            job_type: r.job_type,
+            payload: r.payload,
+        }))
     }
 
     async fn complete(&self, job_id: JobId) -> Result<(), DomainError> {
@@ -78,9 +82,31 @@ impl JobRepository for PostgresJobRepository {
         .map_err(|e| DomainError::infrastructure(format!("failed to fail job: {e}")))?;
         Ok(())
     }
+
+    async fn retry(&self, job_id: JobId, base_seconds: i64) -> Result<bool, DomainError> {
+        let result = sqlx::query(
+            r#"UPDATE jobs
+               SET status = 'pending',
+                   run_at = NOW() + ($2 * GREATEST(1, 2 ^ (attempts - 1)) * INTERVAL '1 second'),
+                   locked_by = NULL,
+                   locked_at = NULL,
+                   error = NULL
+               WHERE id = $1
+                 AND status = 'failed'
+                 AND attempts < max_attempts"#,
+        )
+        .bind(job_id.into_uuid())
+        .bind(base_seconds)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| DomainError::infrastructure(format!("failed to retry job: {e}")))?;
+        Ok(result.rows_affected() > 0)
+    }
 }
 
 #[derive(sqlx::FromRow)]
-struct JobIdRow {
+struct JobRow {
     id: uuid::Uuid,
+    job_type: String,
+    payload: serde_json::Value,
 }

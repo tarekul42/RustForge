@@ -19,14 +19,20 @@ impl<R: CategoryRepository, E: EventStore> CategoryService<R, E> {
 
     /// Create a new category.
     #[instrument(skip(self))]
-    pub async fn create(&self, name: String, slug: String) -> Result<Category, ApplicationError> {
+    pub async fn create(
+        &self,
+        name: String,
+        slug: String,
+        description: Option<String>,
+        thumbnail_url: Option<String>,
+    ) -> Result<Category, ApplicationError> {
         if self.repo.find_by_slug(&slug).await?.is_some() {
             return Err(ApplicationError::conflict(format!(
                 "Category with slug '{slug}' already exists"
             )));
         }
 
-        let (category, event) = Category::new(name, slug);
+        let (category, event) = Category::new(name, slug, description, thumbnail_url);
         self.repo.create(&category).await?;
         self.publish_event(event).await?;
         Ok(category)

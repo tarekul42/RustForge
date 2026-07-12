@@ -14,9 +14,11 @@ use sw_infrastructure::postgres::repos::category::PostgresCategoryRepository;
 use sw_infrastructure::postgres::repos::contact::PostgresContactRepository;
 use sw_infrastructure::postgres::repos::enrollment::PostgresEnrollmentRepository;
 use sw_infrastructure::postgres::repos::event_store::PostgresEventStore;
+use sw_infrastructure::postgres::repos::job::PostgresJobRepository;
 use sw_infrastructure::postgres::repos::level::PostgresLevelRepository;
 use sw_infrastructure::postgres::repos::otp::PostgresOtpRepository;
 use sw_infrastructure::postgres::repos::payment::PostgresPaymentRepository;
+use sw_infrastructure::postgres::repos::refund_log::PostgresRefundLogRepository;
 use sw_infrastructure::postgres::repos::review::PostgresReviewRepository;
 use sw_infrastructure::postgres::repos::session::PostgresSessionRepository;
 use sw_infrastructure::postgres::repos::stats::PostgresStatsRepository;
@@ -29,9 +31,17 @@ use sw_shared::config::Config;
 pub struct AppState {
     /// Application configuration (immutable after startup).
     pub config: Arc<Config>,
+    /// Database connection pool for ad-hoc queries (health checks, etc.).
+    pub pool: sqlx::PgPool,
     /// Auth / user service wired to infrastructure repos.
-    pub auth_service:
-        Arc<AuthService<PostgresUserRepository, PostgresSessionRepository, PostgresOtpRepository>>,
+    pub auth_service: Arc<
+        AuthService<
+            PostgresUserRepository,
+            PostgresSessionRepository,
+            PostgresOtpRepository,
+            PostgresJobRepository,
+        >,
+    >,
     /// Category management service.
     pub category_service: Arc<CategoryService<PostgresCategoryRepository, PostgresEventStore>>,
     /// Contact form submission service.
@@ -56,6 +66,8 @@ pub struct AppState {
             PostgresEventStore,
             SslCommerzClient,
             PostgresWorkshopRepository,
+            PostgresJobRepository,
+            PostgresRefundLogRepository,
         >,
     >,
     /// Review service.
@@ -111,7 +123,13 @@ impl AppState {
 
         Self {
             config: Arc::new(config.clone()),
-            auth_service: Arc::new(AuthService::new(user_repo, session_repo, otp_repo)),
+            pool: pool.clone(),
+            auth_service: Arc::new(AuthService::new(
+                user_repo,
+                session_repo,
+                otp_repo,
+                PostgresJobRepository::new(pool.clone()),
+            )),
             category_service: Arc::new(CategoryService::new(
                 category_repo,
                 PostgresEventStore::new(pool.clone()),
@@ -145,6 +163,8 @@ impl AppState {
                     ipn_url: config.payment.ipn_url.clone(),
                 }),
                 PostgresWorkshopRepository::new(pool.clone()),
+                PostgresJobRepository::new(pool.clone()),
+                PostgresRefundLogRepository::new(pool.clone()),
             )),
             review_service: Arc::new(ReviewService::new(
                 review_repo,

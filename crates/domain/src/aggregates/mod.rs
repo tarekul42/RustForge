@@ -8,6 +8,8 @@ pub mod enrollment;
 pub mod level;
 /// Payment aggregate — tracks payment lifecycle.
 pub mod payment;
+/// RefundLog aggregate — records of processed refunds.
+pub mod refund_log;
 /// Review aggregate — user feedback on workshops.
 pub mod review;
 /// User aggregate — core identity.

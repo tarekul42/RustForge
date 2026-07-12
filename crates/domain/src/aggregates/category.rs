@@ -23,17 +23,22 @@ pub struct Category {
 }
 
 impl Category {
-    /// Create a new category with the given name and slug.
+    /// Create a new category with the given name, slug, and optional description/thumbnail.
     ///
     /// Returns the category along with a `CategoryCreated` domain event.
-    pub fn new(name: String, slug: String) -> (Self, DomainEvent) {
+    pub fn new(
+        name: String,
+        slug: String,
+        description: Option<String>,
+        thumbnail_url: Option<String>,
+    ) -> (Self, DomainEvent) {
         let now = Utc::now();
         let category = Self {
             id: CategoryId::new(),
             name,
             slug,
-            description: None,
-            thumbnail_url: None,
+            description,
+            thumbnail_url,
             created_at: now,
             updated_at: now,
         };
@@ -71,7 +76,12 @@ mod tests {
     use super::*;
 
     fn make_category() -> Category {
-        let (category, _) = Category::new("Programming".to_string(), "programming".to_string());
+        let (category, _) = Category::new(
+            "Programming".to_string(),
+            "programming".to_string(),
+            None,
+            None,
+        );
         category
     }
 

@@ -113,10 +113,23 @@ async fn update_review(
     Path(id): Path<String>,
     Json(payload): Json<UpdateReviewRequest>,
 ) -> Result<Json<ReviewResponse>, ApiError> {
-    let (_session_id, _user_id) = session::resolve_session(&headers, &state).await?;
+    let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
 
     let review_id = ReviewId::parse_str(&id)
         .map_err(|_| ApiError::BadRequest("Invalid review id".to_string()))?;
+
+    let caller = state.auth_service.get_user(user_id).await?;
+    let existing = state
+        .review_service
+        .find_by_id(review_id)
+        .await?
+        .ok_or(ApiError::NotFound)?;
+
+    if existing.user_id != caller.id && !caller.is_admin() {
+        return Err(ApiError::Unauthorized(
+            "Only the review owner or an admin can update this review".to_string(),
+        ));
+    }
 
     let review = state
         .review_service
@@ -174,12 +187,20 @@ async fn delete_review(
 ) -> Result<Json<serde_json::Value>, ApiError> {
     let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
     let caller = state.auth_service.get_user(user_id).await?;
-    if !caller.is_admin() {
-        return Err(ApiError::Unauthorized("Admin access required".to_string()));
-    }
-
     let review_id = ReviewId::parse_str(&id)
         .map_err(|_| ApiError::BadRequest("Invalid review id".to_string()))?;
+
+    let existing = state
+        .review_service
+        .find_by_id(review_id)
+        .await?
+        .ok_or(ApiError::NotFound)?;
+
+    if existing.user_id != caller.id && !caller.is_admin() {
+        return Err(ApiError::Unauthorized(
+            "Only the review owner or an admin can delete this review".to_string(),
+        ));
+    }
 
     state.review_service.delete(review_id).await?;
     Ok(Json(serde_json::json!({"success": true})))

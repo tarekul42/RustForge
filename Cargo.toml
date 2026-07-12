@@ -44,5 +44,8 @@ aws-sdk-s3 = { version = "1", features = ["rt-tokio"] }
 aws-config = { version = "1", features = ["behavior-version-latest"] }
 infer = "0.19"
 moka = { version = "0.12", features = ["future"] }
+lettre = { version = "0.11", features = ["builder", "smtp-transport", "tokio1-native-tls"] }
+tera = "1"
+printpdf = "0.7"
 
 

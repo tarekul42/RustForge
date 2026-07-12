@@ -1,5 +1,6 @@
 use crate::error::ApplicationError;
 use sw_domain::aggregates::user::{User, UserStatus};
+use sw_domain::repositories::job::JobRepository;
 use sw_domain::repositories::otp::OtpRepository;
 use sw_domain::repositories::session::SessionRepository;
 use sw_domain::repositories::user::UserRepository;
@@ -9,10 +10,12 @@ use sw_shared::crypto;
 use tracing::instrument;
 
 /// Application service for authentication flows.
-pub struct AuthService<U: UserRepository, S: SessionRepository, O: OtpRepository> {
+pub struct AuthService<U: UserRepository, S: SessionRepository, O: OtpRepository, J: JobRepository>
+{
     user_repo: U,
     session_repo: S,
     otp_repo: O,
+    job_repo: J,
 }
 
 /// Result of a successful authentication (register or login).
@@ -27,13 +30,16 @@ pub struct AuthResult {
     pub session_expires_at: chrono::DateTime<chrono::Utc>,
 }
 
-impl<U: UserRepository, S: SessionRepository, O: OtpRepository> AuthService<U, S, O> {
+impl<U: UserRepository, S: SessionRepository, O: OtpRepository, J: JobRepository>
+    AuthService<U, S, O, J>
+{
     /// Create a new `AuthService`.
-    pub fn new(user_repo: U, session_repo: S, otp_repo: O) -> Self {
+    pub fn new(user_repo: U, session_repo: S, otp_repo: O, job_repo: J) -> Self {
         Self {
             user_repo,
             session_repo,
             otp_repo,
+            job_repo,
         }
     }
 
@@ -197,20 +203,11 @@ impl<U: UserRepository, S: SessionRepository, O: OtpRepository> AuthService<U, S
         Ok(user)
     }
 
-    /// List registrations for a user.
-    #[instrument(skip(self))]
-    pub async fn list_registrations(
-        &self,
-        _user_id: UserId,
-    ) -> Result<Vec<String>, ApplicationError> {
-        // TODO: implement when RegistrationRepository is available
-        Ok(Vec::new())
-    }
-
     /// Request an OTP code to be sent to the user's email.
     #[instrument(skip(self), fields(email = %email))]
     pub async fn request_otp(&self, email: &str) -> Result<(), ApplicationError> {
-        self.user_repo
+        let user = self
+            .user_repo
             .find_by_email(email)
             .await?
             .ok_or_else(|| ApplicationError::not_found("User", email))?;
@@ -221,7 +218,19 @@ impl<U: UserRepository, S: SessionRepository, O: OtpRepository> AuthService<U, S
 
         self.otp_repo.create(email, &code_hash, &expires_at).await?;
 
-        tracing::info!(otp = %otp_code, "OTP sent to user");
+        let payload = serde_json::json!({
+            "to": user.email,
+            "subject": "Your OTP Code",
+            "template": "otp",
+            "context": {
+                "otp": otp_code,
+            },
+        });
+
+        if let Err(e) = self.job_repo.enqueue("send_email", &payload, None).await {
+            tracing::error!(error = %e, "Failed to enqueue OTP email job");
+        }
+
         Ok(())
     }
 

@@ -2,6 +2,8 @@ use axum::{extract::Extension, routing::get, Json, Router};
 use serde::Serialize;
 use std::sync::Arc;
 
+use crate::error::ApiError;
+use crate::extractors::session;
 use crate::state::AppState;
 
 /// Build the stats router — all paths are relative to `/api/v1/stats`.
@@ -28,7 +30,13 @@ struct WorkshopRatingResponse {
 
 async fn platform_stats(
     Extension(state): Extension<Arc<AppState>>,
-) -> Result<Json<PlatformStatsResponse>, crate::error::ApiError> {
+    headers: axum::http::HeaderMap,
+) -> Result<Json<PlatformStatsResponse>, ApiError> {
+    let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
+    let caller = state.auth_service.get_user(user_id).await?;
+    if !caller.is_admin() {
+        return Err(ApiError::Unauthorized("Admin access required".to_string()));
+    }
     let stats = state.stats_service.platform_stats().await?;
     Ok(Json(PlatformStatsResponse {
         total_users: stats.total_users,
@@ -40,7 +48,13 @@ async fn platform_stats(
 
 async fn workshop_ratings(
     Extension(state): Extension<Arc<AppState>>,
-) -> Result<Json<Vec<WorkshopRatingResponse>>, crate::error::ApiError> {
+    headers: axum::http::HeaderMap,
+) -> Result<Json<Vec<WorkshopRatingResponse>>, ApiError> {
+    let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
+    let caller = state.auth_service.get_user(user_id).await?;
+    if !caller.is_admin() {
+        return Err(ApiError::Unauthorized("Admin access required".to_string()));
+    }
     let ratings = state.stats_service.workshop_ratings().await?;
     Ok(Json(
         ratings

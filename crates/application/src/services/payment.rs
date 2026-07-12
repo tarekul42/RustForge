@@ -1,8 +1,11 @@
 use crate::error::ApplicationError;
 use sw_domain::aggregates::payment::{Payment, PaymentStatus};
+use sw_domain::aggregates::refund_log::RefundLog;
 use sw_domain::events::{DomainEvent, EventStore};
 use sw_domain::repositories::enrollment::EnrollmentRepository;
+use sw_domain::repositories::job::JobRepository;
 use sw_domain::repositories::payment::PaymentRepository;
+use sw_domain::repositories::refund_log::RefundLogRepository;
 use sw_domain::repositories::workshop::WorkshopRepository;
 use sw_domain::services::payment_gateway::PaymentGateway;
 use sw_domain::value_objects::ids::PaymentId;
@@ -15,12 +18,16 @@ pub struct PaymentService<
     ES: EventStore,
     PG: PaymentGateway,
     WR: WorkshopRepository,
+    JR: JobRepository,
+    RL: RefundLogRepository,
 > {
     payment_repo: PR,
     enrollment_repo: ER,
     event_store: ES,
     payment_gateway: PG,
     workshop_repo: WR,
+    job_repo: JR,
+    refund_log_repo: RL,
     // Minimum allowed amount tolerance in BDT (0.5 BDT = 50 paisa).
     amount_tolerance_cents: i64,
 }
@@ -31,7 +38,9 @@ impl<
         ES: EventStore,
         PG: PaymentGateway,
         WR: WorkshopRepository,
-    > PaymentService<PR, ER, ES, PG, WR>
+        JR: JobRepository,
+        RL: RefundLogRepository,
+    > PaymentService<PR, ER, ES, PG, WR, JR, RL>
 {
     /// Create a new `PaymentService`.
     pub fn new(
@@ -40,6 +49,8 @@ impl<
         event_store: ES,
         payment_gateway: PG,
         workshop_repo: WR,
+        job_repo: JR,
+        refund_log_repo: RL,
     ) -> Self {
         Self {
             payment_repo,
@@ -47,6 +58,8 @@ impl<
             event_store,
             payment_gateway,
             workshop_repo,
+            job_repo,
+            refund_log_repo,
             amount_tolerance_cents: 50, // 0.5 BDT
         }
     }
@@ -142,6 +155,15 @@ impl<
             to: "paid",
         })
         .await?;
+
+        let invoice_payload = self.build_invoice_payload(&enrollment, &payment).await?;
+        if let Err(e) = self
+            .job_repo
+            .enqueue("generate_invoice", &invoice_payload, None)
+            .await
+        {
+            tracing::error!(error = %e, "Failed to enqueue invoice job");
+        }
 
         Ok(payment)
     }
@@ -369,6 +391,9 @@ impl<
         })
         .await?;
 
+        let refund_log = RefundLog::new(payment.id, payment.amount.cents(), reason);
+        self.refund_log_repo.create(&refund_log).await?;
+
         Ok(payment)
     }
 
@@ -386,6 +411,16 @@ impl<
             .publish(&event, None)
             .await
             .map_err(|e| ApplicationError::internal(format!("failed to publish event: {e}")))
+    }
+
+    async fn build_invoice_payload(
+        &self,
+        _enrollment: &sw_domain::aggregates::enrollment::Enrollment,
+        payment: &Payment,
+    ) -> Result<serde_json::Value, ApplicationError> {
+        Ok(serde_json::json!({
+            "payment_id": payment.id,
+        }))
     }
 }
 

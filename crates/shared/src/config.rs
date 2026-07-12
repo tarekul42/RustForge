@@ -28,6 +28,18 @@ pub struct Config {
     /// Payment gateway (SSLCommerz) configuration.
     #[serde(default)]
     pub payment: PaymentConfig,
+
+    /// Email (SMTP) configuration.
+    #[serde(default)]
+    pub email: EmailConfig,
+
+    /// Background worker configuration.
+    #[serde(default)]
+    pub worker: WorkerConfig,
+
+    /// S3-compatible object store configuration.
+    #[serde(default)]
+    pub s3: S3Config,
 }
 
 /// Server bind settings.
@@ -120,6 +132,118 @@ impl Default for PaymentConfig {
             ipn_url: String::new(),
         }
     }
+}
+
+/// Email (SMTP) configuration.
+#[derive(Debug, Deserialize, Clone)]
+pub struct EmailConfig {
+    /// SMTP hostname.
+    #[serde(default)]
+    pub smtp_host: String,
+    /// SMTP port.
+    #[serde(default = "default_smtp_port")]
+    pub smtp_port: u16,
+    /// SMTP username.
+    #[serde(default)]
+    pub smtp_username: String,
+    /// SMTP password.
+    #[serde(default)]
+    pub smtp_password: String,
+    /// "From" email address.
+    #[serde(default)]
+    pub from_email: String,
+    /// "From" display name.
+    #[serde(default)]
+    pub from_name: String,
+    /// Directory containing email templates.
+    #[serde(default = "default_template_dir")]
+    pub template_dir: String,
+}
+
+impl Default for EmailConfig {
+    fn default() -> Self {
+        Self {
+            smtp_host: String::new(),
+            smtp_port: default_smtp_port(),
+            smtp_username: String::new(),
+            smtp_password: String::new(),
+            from_email: String::new(),
+            from_name: "Skill Workshop".to_string(),
+            template_dir: default_template_dir(),
+        }
+    }
+}
+
+/// Background worker configuration.
+#[derive(Debug, Deserialize, Clone)]
+pub struct WorkerConfig {
+    /// Unique worker instance ID (auto-generated if empty).
+    #[serde(default)]
+    pub worker_id: String,
+    /// Poll interval in milliseconds.
+    #[serde(default = "default_poll_interval_ms")]
+    pub poll_interval_ms: u64,
+    /// Maximum number of retry attempts per job.
+    #[serde(default = "default_max_retry_attempts")]
+    pub max_retry_attempts: u32,
+    /// Base backoff seconds for retries.
+    #[serde(default = "default_base_backoff_seconds")]
+    pub base_backoff_seconds: i64,
+    /// Job retention days (completed/failed jobs older than this are cleaned up).
+    #[serde(default = "default_job_retention_days")]
+    pub job_retention_days: i64,
+}
+
+impl Default for WorkerConfig {
+    fn default() -> Self {
+        Self {
+            worker_id: String::new(),
+            poll_interval_ms: default_poll_interval_ms(),
+            max_retry_attempts: default_max_retry_attempts(),
+            base_backoff_seconds: default_base_backoff_seconds(),
+            job_retention_days: default_job_retention_days(),
+        }
+    }
+}
+
+/// S3-compatible object store configuration.
+#[derive(Debug, Deserialize, Clone)]
+pub struct S3Config {
+    /// S3 bucket name for invoice PDFs.
+    #[serde(default)]
+    pub invoices_bucket: String,
+}
+
+impl Default for S3Config {
+    fn default() -> Self {
+        Self {
+            invoices_bucket: "invoices".to_string(),
+        }
+    }
+}
+
+fn default_smtp_port() -> u16 {
+    587
+}
+
+fn default_template_dir() -> String {
+    "templates".to_string()
+}
+
+fn default_poll_interval_ms() -> u64 {
+    5000
+}
+
+fn default_max_retry_attempts() -> u32 {
+    5
+}
+
+fn default_base_backoff_seconds() -> i64 {
+    30
+}
+
+fn default_job_retention_days() -> i64 {
+    30
 }
 
 fn default_payment_gateway_url() -> String {

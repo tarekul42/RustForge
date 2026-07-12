@@ -7,5 +7,16 @@ license.workspace = true
 
 [dependencies]
 sw-shared = { path = "../shared" }
+sw-domain = { path = "../domain" }
+sw-application = { path = "../application" }
+sw-infrastructure = { path = "../infrastructure" }
 tokio.workspace = true
 tracing.workspace = true
+tracing-subscriber.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+sqlx.workspace = true
+async-trait.workspace = true

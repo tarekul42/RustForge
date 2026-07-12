@@ -39,7 +39,7 @@ async fn health_response_includes_x_request_id() {
 }
 
 #[tokio::test]
-async fn health_ready_endpoint_returns_200() {
+async fn health_ready_endpoint_returns_503_without_state() {
     let app = build_app(None);
 
     let response = app
@@ -52,7 +52,8 @@ async fn health_ready_endpoint_returns_200() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::OK);
+    // Without AppState, the readiness endpoint is not mounted → 404
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]

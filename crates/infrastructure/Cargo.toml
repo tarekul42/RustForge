@@ -22,3 +22,6 @@ aws-config.workspace = true
 reqwest.workspace = true
 sha2.workspace = true
 hex.workspace = true
+lettre.workspace = true
+tera.workspace = true
+printpdf.workspace = true

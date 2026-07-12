@@ -48,7 +48,6 @@ impl From<sw_domain::aggregates::category::Category> for CategoryResponse {
 }
 
 #[derive(Deserialize)]
-#[allow(dead_code)]
 struct CreateCategoryRequest {
     pub name: String,
     pub slug: Option<String>,
@@ -76,7 +75,15 @@ async fn create_category(
 
     let slug = payload.slug.unwrap_or_else(|| generate_slug(&payload.name));
 
-    let category = state.category_service.create(payload.name, slug).await?;
+    let category = state
+        .category_service
+        .create(
+            payload.name,
+            slug,
+            payload.description,
+            payload.thumbnail_url,
+        )
+        .await?;
     Ok(Json(CategoryResponse::from(category)))
 }
 

@@ -16,6 +16,8 @@ pub mod level;
 pub mod otp;
 /// SQLx implementation of `PaymentRepository`.
 pub mod payment;
+/// SQLx implementation of `RefundLogRepository`.
+pub mod refund_log;
 /// SQLx implementation of `ReviewRepository`.
 pub mod review;
 /// SQLx implementation of `SessionRepository`.

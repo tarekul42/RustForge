@@ -14,6 +14,8 @@ pub mod level;
 pub mod otp;
 /// Repository trait for Payment aggregate.
 pub mod payment;
+/// Repository trait for RefundLog aggregate.
+pub mod refund_log;
 /// Repository trait for Review aggregate.
 pub mod review;
 /// Repository trait for Session entity.

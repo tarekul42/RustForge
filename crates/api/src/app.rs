@@ -21,10 +21,11 @@ pub fn build_app(state: Option<Arc<AppState>>) -> Router {
 
     let rate_limiter = TokenBucket::new(120, 60);
 
-    let mut router = Router::new().nest("/api/v1", routes::health::router());
+    let mut router = Router::new().nest("/api/v1/health", routes::health::liveness_router());
 
     if let Some(state) = state {
         router = router
+            .nest("/api/v1/health", routes::health::readiness_router())
             .nest("/api/v1/auth", routes::auth::router())
             .nest("/api/v1/users", routes::user::router())
             .nest("/api/v1/categories", routes::category::router())

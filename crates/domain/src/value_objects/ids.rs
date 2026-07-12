@@ -74,3 +74,4 @@ id_type!(OAuthStateId, "oauth_state");
 id_type!(AuthCodeId, "auth_code");
 id_type!(ContactId, "contact");
 id_type!(JobId, "job");
+id_type!(RefundLogId, "refund_log");

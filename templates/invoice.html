@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice</title>
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2>Payment Confirmed</h2>
+    <p>Dear <strong>{{ user_name }}</strong>,</p>
+    <p>Your payment for the workshop <strong>{{ workshop_title }}</strong> has been confirmed.</p>
+    <p>Your invoice is attached as a PDF. Please keep it for your records.</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <tr>
+            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Transaction ID:</strong></td>
+            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ transaction_id }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Workshop:</strong></td>
+            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ workshop_title }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Amount:</strong></td>
+            <td style="padding: 8px; border-bottom: 1px solid #ddd;">BDT {{ amount }}</td>
+        </tr>
+    </table>
+    <p>You can access your invoice at any time from your account dashboard.</p>
+    <hr>
+    <p style="color: #666; font-size: 12px;">Skill Workshop Platform</p>
+</body>
+</html>

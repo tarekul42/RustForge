@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Extension, Form, Path},
+    extract::{Extension, Form, Path, Query},
     routing::{get, post},
     Json, Router,
 };
@@ -15,9 +15,9 @@ use sw_domain::value_objects::ids::PaymentId;
 /// Build the payment router — all paths are relative to `/api/v1/payments`.
 pub fn router() -> Router {
     Router::new()
-        .route("/success", get(success_handler).post(success_handler))
-        .route("/fail", get(fail_handler).post(fail_handler))
-        .route("/cancel", get(cancel_handler).post(cancel_handler))
+        .route("/success", get(success_get).post(success_post))
+        .route("/fail", get(fail_get).post(fail_post))
+        .route("/cancel", get(cancel_get).post(cancel_post))
         .route("/ipn", post(ipn_handler))
         .route("/refund", post(refund_handler))
         .route("/invoice/:id", get(get_invoice_url))
@@ -66,9 +66,9 @@ struct InvoiceResponse {
 // Handlers
 // ---------------------------------------------------------------------------
 
-async fn success_handler(
+async fn success_get(
     Extension(state): Extension<Arc<AppState>>,
-    Form(payload): Form<PaymentCallback>,
+    Query(payload): Query<PaymentCallback>,
 ) -> Result<Json<PaymentResponse>, ApiError> {
     let transaction_id = payload
         .tran_id
@@ -94,9 +94,16 @@ async fn success_handler(
     }))
 }
 
-async fn fail_handler(
+async fn success_post(
     Extension(state): Extension<Arc<AppState>>,
     Form(payload): Form<PaymentCallback>,
+) -> Result<Json<PaymentResponse>, ApiError> {
+    success_get(Extension(state), Query(payload)).await
+}
+
+async fn fail_get(
+    Extension(state): Extension<Arc<AppState>>,
+    Query(payload): Query<PaymentCallback>,
 ) -> Result<Json<PaymentResponse>, ApiError> {
     let transaction_id = payload
         .tran_id
@@ -116,9 +123,16 @@ async fn fail_handler(
     }))
 }
 
-async fn cancel_handler(
+async fn fail_post(
     Extension(state): Extension<Arc<AppState>>,
     Form(payload): Form<PaymentCallback>,
+) -> Result<Json<PaymentResponse>, ApiError> {
+    fail_get(Extension(state), Query(payload)).await
+}
+
+async fn cancel_get(
+    Extension(state): Extension<Arc<AppState>>,
+    Query(payload): Query<PaymentCallback>,
 ) -> Result<Json<PaymentResponse>, ApiError> {
     let transaction_id = payload
         .tran_id
@@ -139,6 +153,13 @@ async fn cancel_handler(
         created_at: payment.created_at.to_rfc3339(),
         updated_at: payment.updated_at.to_rfc3339(),
     }))
+}
+
+async fn cancel_post(
+    Extension(state): Extension<Arc<AppState>>,
+    Form(payload): Form<PaymentCallback>,
+) -> Result<Json<PaymentResponse>, ApiError> {
+    cancel_get(Extension(state), Query(payload)).await
 }
 
 async fn ipn_handler(

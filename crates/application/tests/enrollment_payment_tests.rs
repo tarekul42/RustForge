@@ -4,11 +4,14 @@ use sw_application::services::enrollment::{CreateEnrollmentInput, EnrollmentServ
 use sw_application::services::payment::PaymentService;
 use sw_domain::aggregates::enrollment::{Enrollment, EnrollmentStatus};
 use sw_domain::aggregates::payment::{Payment, PaymentStatus};
+use sw_domain::aggregates::refund_log::RefundLog;
 use sw_domain::aggregates::workshop::Workshop;
 use sw_domain::error::DomainError;
 use sw_domain::events::{DomainEvent, EventStore};
 use sw_domain::repositories::enrollment::EnrollmentRepository;
+use sw_domain::repositories::job::JobRepository;
 use sw_domain::repositories::payment::PaymentRepository;
+use sw_domain::repositories::refund_log::RefundLogRepository;
 use sw_domain::repositories::workshop::WorkshopRepository;
 use sw_domain::services::payment_gateway::{
     GatewayInitResponse, GatewayValidationResponse, PaymentGateway, PaymentGatewayError,
@@ -220,7 +223,13 @@ impl WorkshopRepository for MockWorkshopRepo {
         _url: &str,
         _s3_key: &str,
     ) -> Result<sw_domain::aggregates::workshop::WorkshopImage, DomainError> {
-        unimplemented!()
+        Ok(sw_domain::aggregates::workshop::WorkshopImage {
+            id: WorkshopImageId::new(),
+            workshop_id: _workshop_id,
+            url: String::new(),
+            s3_key: String::new(),
+            created_at: chrono::Utc::now(),
+        })
     }
     async fn remove_image(&self, _image_id: WorkshopImageId) -> Result<(), DomainError> {
         Ok(())
@@ -249,6 +258,48 @@ impl EventStore for MockEventStore {
         _event: &DomainEvent,
         _context: Option<&sw_domain::events::AuditContext>,
     ) -> Result<(), DomainError> {
+        Ok(())
+    }
+}
+
+struct MockJobRepo;
+
+#[async_trait::async_trait]
+impl JobRepository for MockJobRepo {
+    async fn enqueue(
+        &self,
+        _job_type: &str,
+        _payload: &serde_json::Value,
+        _run_at: Option<chrono::DateTime<chrono::Utc>>,
+    ) -> Result<(), DomainError> {
+        Ok(())
+    }
+
+    async fn claim_next(
+        &self,
+        _worker_id: uuid::Uuid,
+    ) -> Result<Option<sw_domain::repositories::job::JobInfo>, DomainError> {
+        Ok(None)
+    }
+
+    async fn complete(&self, _job_id: JobId) -> Result<(), DomainError> {
+        Ok(())
+    }
+
+    async fn fail(&self, _job_id: JobId, _error: &str) -> Result<(), DomainError> {
+        Ok(())
+    }
+
+    async fn retry(&self, _job_id: JobId, _base_seconds: i64) -> Result<bool, DomainError> {
+        Ok(true)
+    }
+}
+
+struct MockRefundLogRepo;
+
+#[async_trait::async_trait]
+impl RefundLogRepository for MockRefundLogRepo {
+    async fn create(&self, _log: &RefundLog) -> Result<(), DomainError> {
         Ok(())
     }
 }
@@ -384,6 +435,9 @@ async fn enrollment_create_workshop_not_found() {
 async fn payment_success_cas_idempotent() {
     let payment_id = PaymentId::new();
     let enrollment_id = EnrollmentId::new();
+    let user_id = UserId::new();
+    let workshop = make_workshop();
+
     let payment = Payment {
         id: payment_id,
         enrollment_id,
@@ -401,8 +455,8 @@ async fn payment_success_cas_idempotent() {
 
     let enrollment = Enrollment {
         id: enrollment_id,
-        user_id: UserId::new(),
-        workshop_id: WorkshopId::new(),
+        user_id,
+        workshop_id: workshop.id,
         payment_id: Some(payment_id),
         student_count: 1,
         status: EnrollmentStatus::Pending,
@@ -413,7 +467,6 @@ async fn payment_success_cas_idempotent() {
     let enroll_repo = MockEnrollmentRepo::new();
     enroll_repo.enrollments.lock().unwrap().push(enrollment);
 
-    let workshop = make_workshop();
     let workshop_repo = MockWorkshopRepo::new(vec![workshop]);
 
     let service = PaymentService::new(
@@ -424,6 +477,8 @@ async fn payment_success_cas_idempotent() {
             should_succeed: true,
         },
         workshop_repo,
+        MockJobRepo,
+        MockRefundLogRepo,
     );
 
     // First call should succeed
@@ -486,6 +541,8 @@ async fn refund_paid_payment_succeeds() {
             should_succeed: true,
         },
         workshop_repo,
+        MockJobRepo,
+        MockRefundLogRepo,
     );
 
     let result = service
@@ -522,6 +579,8 @@ async fn refund_unpaid_payment_fails() {
             should_succeed: true,
         },
         MockWorkshopRepo::new(vec![workshop]),
+        MockJobRepo,
+        MockRefundLogRepo,
     );
 
     let result = service.refund(payment_id, "Test".into()).await;

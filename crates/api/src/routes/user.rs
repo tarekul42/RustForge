@@ -68,7 +68,6 @@ pub struct RegistrationResponse {
 // Admin request/response types
 
 #[derive(Deserialize)]
-#[allow(dead_code)]
 struct AdminUpdateUserRequest {
     name: Option<String>,
     role: Option<String>,
@@ -129,8 +128,20 @@ async fn list_registrations(
     headers: axum::http::HeaderMap,
 ) -> Result<Json<Vec<RegistrationResponse>>, ApiError> {
     let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
-    let _registrations = state.auth_service.list_registrations(user_id).await?;
-    Ok(Json(Vec::new()))
+
+    let enrollments = state.enrollment_service.list_by_user(user_id).await?;
+
+    Ok(Json(
+        enrollments
+            .into_iter()
+            .map(|e| RegistrationResponse {
+                id: e.id.to_string(),
+                workshop_id: e.workshop_id.to_string(),
+                status: e.status.as_str().to_string(),
+                registered_at: e.created_at.to_rfc3339(),
+            })
+            .collect(),
+    ))
 }
 
 async fn list_users(
