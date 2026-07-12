@@ -61,29 +61,31 @@ mod tests {
 
     #[test]
     fn hash_and_verify_round_trip() {
-        let password = "correct-horse-battery-staple";
-        let hash = hash_password(password).unwrap();
-        assert!(verify_password(password, &hash).unwrap());
+        let password = format!("pwd-{}", rand::random::<u64>());
+        let hash = hash_password(&password).unwrap();
+        assert!(verify_password(&password, &hash).unwrap());
     }
 
     #[test]
     fn wrong_password_fails() {
-        let hash = hash_password("real-password").unwrap();
-        assert!(!verify_password("wrong-password", &hash).unwrap());
+        let password = format!("pwd-{}", rand::random::<u64>());
+        let hash = hash_password(&password).unwrap();
+        let wrong = format!("pwd-{}", rand::random::<u64>());
+        assert!(!verify_password(&wrong, &hash).unwrap());
     }
 
     #[test]
     fn hash_token_is_deterministic() {
-        let token = "my-session-token";
-        let a = hash_token(token);
-        let b = hash_token(token);
+        let token = format!("tok-{}", rand::random::<u64>());
+        let a = hash_token(&token);
+        let b = hash_token(&token);
         assert_eq!(a, b);
     }
 
     #[test]
     fn hash_token_differs_for_different_inputs() {
-        let a = hash_token("token-a");
-        let b = hash_token("token-b");
+        let a = hash_token(&format!("tok-{}", rand::random::<u64>()));
+        let b = hash_token(&format!("tok-{}", rand::random::<u64>()));
         assert_ne!(a, b);
     }
 
