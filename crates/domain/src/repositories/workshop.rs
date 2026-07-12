@@ -26,4 +26,6 @@ pub trait WorkshopRepository: Send + Sync {
     ) -> Result<WorkshopImage, DomainError>;
     /// Remove an image record from a workshop.
     async fn remove_image(&self, image_id: WorkshopImageId) -> Result<(), DomainError>;
+    /// Return all workshops, ordered by creation date descending.
+    async fn find_all(&self) -> Result<Vec<Workshop>, DomainError>;
 }

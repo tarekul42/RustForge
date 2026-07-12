@@ -133,6 +133,12 @@ impl<W: WorkshopRepository, C: CategoryRepository, L: LevelRepository, E: EventS
         Ok(workshop)
     }
 
+    /// List all workshops, ordered by creation date descending.
+    #[instrument(skip(self))]
+    pub async fn list(&self) -> Result<Vec<Workshop>, ApplicationError> {
+        self.repo.find_all().await.map_err(ApplicationError::from)
+    }
+
     /// Find a workshop by its ID.
     #[instrument(skip(self))]
     pub async fn get_by_id(&self, id: WorkshopId) -> Result<Workshop, ApplicationError> {

@@ -105,6 +105,18 @@ impl UserRepository for PostgresUserRepository {
             .map_err(|e| DomainError::infrastructure(format!("failed to delete user: {e}")))?;
         Ok(())
     }
+
+    async fn find_all(&self) -> Result<Vec<User>, DomainError> {
+        let rows = sqlx::query_as::<_, UserRow>(
+            r#"SELECT id, email, name, password_hash, phone, picture_url, age, address,
+                      role, status, is_verified, expertise, bio, created_at, updated_at
+               FROM users ORDER BY created_at DESC"#,
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| DomainError::infrastructure(format!("failed to list users: {e}")))?;
+        rows.into_iter().map(UserRow::into_domain).collect()
+    }
 }
 
 /// Raw database row for the `users` table.

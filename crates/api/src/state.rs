@@ -2,6 +2,7 @@ use std::sync::Arc;
 use sw_application::services::auth::AuthService;
 use sw_application::services::category::CategoryService;
 use sw_application::services::level::LevelService;
+use sw_application::services::user::UserAdminService;
 use sw_application::services::workshop::WorkshopService;
 use sw_infrastructure::postgres::repos::category::PostgresCategoryRepository;
 use sw_infrastructure::postgres::repos::event_store::PostgresEventStore;
@@ -33,6 +34,9 @@ pub struct AppState {
             PostgresEventStore,
         >,
     >,
+    /// Admin user management service.
+    pub user_admin_service:
+        Arc<UserAdminService<PostgresUserRepository, PostgresEventStore>>,
 }
 
 impl AppState {
@@ -60,6 +64,10 @@ impl AppState {
                 workshop_repo,
                 PostgresCategoryRepository::new(pool.clone()),
                 PostgresLevelRepository::new(pool.clone()),
+                PostgresEventStore::new(pool.clone()),
+            )),
+            user_admin_service: Arc::new(UserAdminService::new(
+                PostgresUserRepository::new(pool.clone()),
                 PostgresEventStore::new(pool),
             )),
         }

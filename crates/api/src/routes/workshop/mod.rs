@@ -150,10 +150,15 @@ async fn create_workshop(
 }
 
 async fn list_workshops(
-    Extension(_state): Extension<Arc<AppState>>,
+    Extension(state): Extension<Arc<AppState>>,
 ) -> Result<Json<Vec<WorkshopResponse>>, ApiError> {
-    // TODO: implement find_all on WorkshopRepository
-    Ok(Json(Vec::new()))
+    let workshops = state.workshop_service.list().await?;
+    let mut responses = Vec::with_capacity(workshops.len());
+    for w in workshops {
+        let images = state.workshop_service.get_images(w.id).await?;
+        responses.push(to_workshop_response(w, images));
+    }
+    Ok(Json(responses))
 }
 
 async fn get_workshop_by_slug(

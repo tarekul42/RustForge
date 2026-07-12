@@ -1,5 +1,7 @@
 use axum::{
     extract::Extension,
+    http::HeaderMap,
+    response::{IntoResponse, Response},
     routing::{get, post},
     Json, Router,
 };
@@ -9,6 +11,22 @@ use std::sync::Arc;
 use crate::error::ApiError;
 use crate::extractors::session;
 use crate::state::AppState;
+
+/// Wrap a JSON response with a `Set-Cookie` header for the session token.
+fn with_session_cookie<T: Serialize>(
+    data: T,
+    token: &str,
+    expires_at: &chrono::DateTime<chrono::Utc>,
+) -> Response {
+    let cookie = format!(
+        "session={}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age={}",
+        token,
+        (*expires_at - chrono::Utc::now()).num_seconds().max(0)
+    );
+    let mut headers = HeaderMap::new();
+    headers.insert("Set-Cookie", cookie.parse().unwrap());
+    (headers, Json(data)).into_response()
+}
 
 /// Build the auth router — all paths are relative to `/api/v1/auth`.
 pub fn router() -> Router {
@@ -109,7 +127,7 @@ pub struct LogoutResponse {
 async fn register(
     Extension(state): Extension<Arc<AppState>>,
     Json(payload): Json<RegisterRequest>,
-) -> Result<Json<RegisterResponse>, ApiError> {
+) -> Result<Response, ApiError> {
     let result = state
         .auth_service
         .register(
@@ -119,28 +137,36 @@ async fn register(
         )
         .await?;
 
-    Ok(Json(RegisterResponse {
-        user_id: result.user.id.to_string(),
-        session_token: result.session_token,
-        session_expires_at: result.session_expires_at.to_rfc3339(),
-    }))
+    Ok(with_session_cookie(
+        RegisterResponse {
+            user_id: result.user.id.to_string(),
+            session_token: result.session_token.clone(),
+            session_expires_at: result.session_expires_at.to_rfc3339(),
+        },
+        &result.session_token,
+        &result.session_expires_at,
+    ))
 }
 
 /// Log in with email and password.
 async fn login(
     Extension(state): Extension<Arc<AppState>>,
     Json(payload): Json<LoginRequest>,
-) -> Result<Json<LoginResponse>, ApiError> {
+) -> Result<Response, ApiError> {
     let result = state
         .auth_service
         .login(&payload.email, &payload.password)
         .await?;
 
-    Ok(Json(LoginResponse {
-        user_id: result.user.id.to_string(),
-        session_token: result.session_token,
-        session_expires_at: result.session_expires_at.to_rfc3339(),
-    }))
+    Ok(with_session_cookie(
+        LoginResponse {
+            user_id: result.user.id.to_string(),
+            session_token: result.session_token.clone(),
+            session_expires_at: result.session_expires_at.to_rfc3339(),
+        },
+        &result.session_token,
+        &result.session_expires_at,
+    ))
 }
 
 /// Request an OTP code to be sent to the user's email.

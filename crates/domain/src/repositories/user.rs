@@ -15,4 +15,6 @@ pub trait UserRepository: Send + Sync {
     async fn update(&self, user: &User) -> Result<(), DomainError>;
     /// Delete a user by ID.
     async fn delete(&self, id: UserId) -> Result<(), DomainError>;
+    /// Return all users, ordered by creation date descending.
+    async fn find_all(&self) -> Result<Vec<User>, DomainError>;
 }

@@ -1,3 +1,4 @@
+use crate::middleware::origin_check::origin_check_mw;
 use crate::middleware::rate_limit::rate_limit_mw;
 use crate::middleware::rate_limit::TokenBucket;
 use crate::middleware::request_id::set_request_id;
@@ -32,6 +33,7 @@ pub fn build_app(state: Option<Arc<AppState>>) -> Router {
                 "/api/v1/workshops/levels",
                 routes::workshop::levels::router(),
             )
+            .layer(middleware::from_fn(origin_check_mw))
             .layer(axum::Extension(state));
     }
 

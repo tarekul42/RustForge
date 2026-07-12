@@ -1,35 +1,28 @@
 use axum::{
-    extract::Request,
+    extract::{Extension, Request},
     http::StatusCode,
     middleware::Next,
     response::Response,
 };
 use std::sync::Arc;
 
-/// Allowed origins for the API.
-#[derive(Clone)]
-pub struct AllowedOrigins {
-    origins: Arc<Vec<String>>,
-}
-
-impl AllowedOrigins {
-    pub fn new(origins: Vec<String>) -> Self {
-        Self {
-            origins: Arc::new(origins),
-        }
-    }
-}
+use crate::state::AppState;
 
 /// Axum middleware that rejects requests with `Origin` headers not in the allowed list.
+///
+/// Reads allowed origins from `AppState::config::allowed_origins`.
 pub async fn origin_check_mw(
-    State(allowed): State<AllowedOrigins>,
+    Extension(state): Extension<Arc<AppState>>,
     req: Request,
     next: Next,
 ) -> Result<Response, (StatusCode, &'static str)> {
+    let allowed = &state.config.allowed_origins;
+
     // If no origins are configured, allow all (development mode).
-    if allowed.origins.is_empty() {
-        return Ok(next.run(req).await);
-    }
+    let origins = match allowed {
+        Some(o) if !o.is_empty() => o,
+        _ => return Ok(next.run(req).await),
+    };
 
     let origin = req
         .headers()
@@ -37,7 +30,7 @@ pub async fn origin_check_mw(
         .and_then(|v| v.to_str().ok());
 
     match origin {
-        Some(o) if allowed.origins.contains(&o.to_string()) => Ok(next.run(req).await),
+        Some(o) if origins.contains(&o.to_string()) => Ok(next.run(req).await),
         Some(_) => Err((StatusCode::FORBIDDEN, "Origin not allowed")),
         None => {
             // Non-browser clients (e.g. mobile apps) may not send Origin.

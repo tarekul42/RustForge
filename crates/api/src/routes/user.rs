@@ -138,12 +138,25 @@ async fn list_users(
     headers: axum::http::HeaderMap,
 ) -> Result<Json<Vec<UserProfileResponse>>, ApiError> {
     let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
-    let user = state.auth_service.get_user(user_id).await?;
-    if !user.is_admin() {
+    let caller = state.auth_service.get_user(user_id).await?;
+    if !caller.is_admin() {
         return Err(ApiError::Unauthorized("Admin access required".to_string()));
     }
-    // TODO: implement find_all on UserRepository
-    Ok(Json(Vec::new()))
+    let users = state.user_admin_service.list().await?;
+    let responses = users
+        .into_iter()
+        .map(|u| UserProfileResponse {
+            user_id: u.id.to_string(),
+            email: u.email.to_string(),
+            name: Some(u.name),
+            picture_url: u.picture_url,
+            role: u.role.as_str().to_string(),
+            is_verified: u.is_verified,
+            created_at: u.created_at.to_rfc3339(),
+            updated_at: u.updated_at.to_rfc3339(),
+        })
+        .collect();
+    Ok(Json(responses))
 }
 
 async fn get_user(
@@ -174,26 +187,52 @@ async fn get_user(
 async fn admin_update_user(
     Extension(state): Extension<Arc<AppState>>,
     headers: axum::http::HeaderMap,
-    Path(_id): Path<uuid::Uuid>,
-    Json(_payload): Json<AdminUpdateUserRequest>,
+    Path(id): Path<uuid::Uuid>,
+    Json(payload): Json<AdminUpdateUserRequest>,
 ) -> Result<Json<UserProfileResponse>, ApiError> {
     let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
-    let user = state.auth_service.get_user(user_id).await?;
-    if !user.is_admin() {
+    let caller = state.auth_service.get_user(user_id).await?;
+    if !caller.is_admin() {
         return Err(ApiError::Unauthorized("Admin access required".to_string()));
     }
-    Err(ApiError::NotImplemented)
+    let target_id = sw_domain::value_objects::ids::UserId::from_uuid(id);
+    let user = state
+        .user_admin_service
+        .update(sw_application::services::user::UpdateUserInput {
+            user_id: target_id,
+            name: payload.name,
+            role: payload.role,
+            status: payload.status,
+            phone: payload.phone,
+            age: payload.age,
+            address: payload.address,
+            expertise: payload.expertise,
+            bio: payload.bio,
+        })
+        .await?;
+    Ok(Json(UserProfileResponse {
+        user_id: user.id.to_string(),
+        email: user.email.to_string(),
+        name: Some(user.name),
+        picture_url: user.picture_url,
+        role: user.role.as_str().to_string(),
+        is_verified: user.is_verified,
+        created_at: user.created_at.to_rfc3339(),
+        updated_at: user.updated_at.to_rfc3339(),
+    }))
 }
 
 async fn admin_delete_user(
     Extension(state): Extension<Arc<AppState>>,
     headers: axum::http::HeaderMap,
-    Path(_id): Path<uuid::Uuid>,
+    Path(id): Path<uuid::Uuid>,
 ) -> Result<Json<serde_json::Value>, ApiError> {
     let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
-    let user = state.auth_service.get_user(user_id).await?;
-    if !user.is_admin() {
+    let caller = state.auth_service.get_user(user_id).await?;
+    if !caller.is_admin() {
         return Err(ApiError::Unauthorized("Admin access required".to_string()));
     }
-    Err(ApiError::NotImplemented)
+    let target_id = sw_domain::value_objects::ids::UserId::from_uuid(id);
+    state.user_admin_service.delete(target_id).await?;
+    Ok(Json(serde_json::json!({"success": true})))
 }

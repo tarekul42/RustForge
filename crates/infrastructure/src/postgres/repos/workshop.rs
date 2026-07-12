@@ -166,6 +166,19 @@ impl WorkshopRepository for PostgresWorkshopRepository {
             })?;
         Ok(())
     }
+
+    async fn find_all(&self) -> Result<Vec<Workshop>, DomainError> {
+        let rows = sqlx::query_as::<_, WorkshopRow>(
+            r#"SELECT id, title, slug, description, location, price_cents,
+                      start_date, end_date, max_seats, current_enrollments, min_age,
+                      category_id, level_id, created_by, created_at, updated_at
+               FROM workshops ORDER BY created_at DESC"#,
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| DomainError::infrastructure(format!("failed to list workshops: {e}")))?;
+        rows.into_iter().map(WorkshopRow::into_domain).collect()
+    }
 }
 
 #[derive(sqlx::FromRow)]

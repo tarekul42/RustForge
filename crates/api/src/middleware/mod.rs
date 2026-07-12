@@ -2,3 +2,5 @@
 pub mod rate_limit;
 /// Request-id tracing middleware.
 pub mod request_id;
+/// CORS origin validation middleware.
+pub mod origin_check;
