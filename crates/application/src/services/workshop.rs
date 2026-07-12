@@ -277,7 +277,7 @@ impl<W: WorkshopRepository, C: CategoryRepository, L: LevelRepository, E: EventS
 
     async fn publish_event(&self, event: DomainEvent) -> Result<(), ApplicationError> {
         self.event_store
-            .publish(&event)
+            .publish(&event, None)
             .await
             .map_err(|e| ApplicationError::internal(format!("failed to publish event: {e}")))
     }

@@ -9,5 +9,7 @@ pub mod error;
 pub mod events;
 /// Repository traits for persisting and retrieving aggregates.
 pub mod repositories;
+/// Domain service port traits (ObjectStore, EmailSender).
+pub mod services;
 /// Value objects (ids, email, money, OTP, transaction ID).
 pub mod value_objects;

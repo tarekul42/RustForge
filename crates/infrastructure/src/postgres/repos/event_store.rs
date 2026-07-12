@@ -1,6 +1,7 @@
 use sqlx::PgPool;
 use sw_domain::error::DomainError;
-use sw_domain::events::{DomainEvent, EventStore};
+use sw_domain::events::{AuditContext, DomainEvent, EventStore};
+use sw_domain::value_objects::ids::UserId;
 
 /// SQLx-backed implementation of [`EventStore`].
 ///
@@ -17,18 +18,35 @@ impl PostgresEventStore {
 
 #[async_trait::async_trait]
 impl EventStore for PostgresEventStore {
-    async fn publish(&self, event: &DomainEvent) -> Result<(), DomainError> {
+    async fn publish(
+        &self,
+        event: &DomainEvent,
+        context: Option<&AuditContext>,
+    ) -> Result<(), DomainError> {
         let event_type = event.event_type();
         let aggregate_type = event.aggregate_type();
         let aggregate_id = aggregate_id_from_event(event);
 
+        let (actor_id, ip_address, user_agent) = match context {
+            Some(ctx) => (
+                ctx.actor_id.map(UserId::into_uuid),
+                ctx.ip_address.as_deref(),
+                ctx.user_agent.as_deref(),
+            ),
+            None => (None, None, None),
+        };
+
         sqlx::query(
-            r#"INSERT INTO audit_logs (event_type, aggregate_type, aggregate_id, changes)
-               VALUES ($1, $2, $3, $4)"#,
+            r#"INSERT INTO audit_logs (event_type, aggregate_type, aggregate_id, actor_id,
+               ip_address, user_agent, changes)
+               VALUES ($1, $2, $3, $4, $5, $6, $7)"#,
         )
         .bind(event_type)
         .bind(aggregate_type)
         .bind(aggregate_id)
+        .bind(actor_id)
+        .bind(ip_address)
+        .bind(user_agent)
         .bind(serde_json::to_value(event).unwrap_or_default())
         .execute(&self.pool)
         .await

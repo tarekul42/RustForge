@@ -1,5 +1,9 @@
 /// Errors that can occur in the domain layer.
+///
+/// This enum is `#[non_exhaustive]` — new variants may be added in future
+/// versions without a breaking change for consumers.
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
+#[non_exhaustive]
 pub enum DomainError {
     /// The requested resource was not found.
     #[error("Not found: {0}")]

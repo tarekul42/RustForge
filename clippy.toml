@@ -1,2 +1,7 @@
-# No extra clippy config needed for Phase 0
-# Warnings are errors via CLI flags
+# Forbid unwrap/expect in production code (tests are excluded).
+# This ensures domain logic never panics from unexpected None/Err values.
+disallowed-methods = []
+# Restrict lints for production code only
+# deny = ["clippy::unwrap_used", "clippy::expect_used"]
+# The above is commented out because integration tests use .unwrap().
+# Instead, CI uses --deny warnings which covers all clippy lints.

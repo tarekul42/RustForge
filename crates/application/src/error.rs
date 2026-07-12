@@ -75,6 +75,7 @@ impl From<DomainError> for ApplicationError {
             DomainError::InvalidStatusTransition(msg) | DomainError::Internal(msg) => {
                 Self::Internal(msg)
             }
+            _ => Self::Internal("Unhandled domain error".to_string()),
         }
     }
 }

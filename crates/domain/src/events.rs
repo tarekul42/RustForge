@@ -200,12 +200,31 @@ impl DomainEvent {
     }
 }
 
+/// Contextual metadata captured alongside a domain event for audit trail purposes.
+///
+/// This information is extracted from the HTTP request at the API layer and
+/// passed down through application services to the [`EventStore`].
+#[derive(Debug, Clone, Default)]
+pub struct AuditContext {
+    /// The user who performed the action (if authenticated).
+    pub actor_id: Option<crate::value_objects::ids::UserId>,
+    /// The client's IP address.
+    pub ip_address: Option<String>,
+    /// The User-Agent header from the request.
+    pub user_agent: Option<String>,
+}
+
 /// Repository trait for persisting domain events.
 ///
 /// Implementations write events to durable storage (e.g. the `audit_logs` table)
-/// to build an append-only event log.
+/// to build an append-only event log. Optional [`AuditContext`] provides
+/// actor, IP, and user-agent metadata for the audit trail.
 #[async_trait::async_trait]
 pub trait EventStore: Send + Sync {
-    /// Persist a domain event.
-    async fn publish(&self, event: &DomainEvent) -> Result<(), crate::error::DomainError>;
+    /// Persist a domain event with optional audit context.
+    async fn publish(
+        &self,
+        event: &DomainEvent,
+        context: Option<&AuditContext>,
+    ) -> Result<(), crate::error::DomainError>;
 }
