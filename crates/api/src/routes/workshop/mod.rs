@@ -21,11 +21,11 @@ pub fn router() -> Router {
     Router::new()
         .route("/", get(list_workshops))
         .route("/", post(create_workshop))
-        .route("/:slug", get(get_workshop_by_slug))
-        .route("/:id", patch(update_workshop))
-        .route("/:id", delete(delete_workshop))
-        .route("/:id/images", post(add_workshop_image))
-        .route("/:id/images/:image_id", delete(remove_workshop_image))
+        .route("/{slug}", get(get_workshop_by_slug))
+        .route("/{id}", patch(update_workshop))
+        .route("/{id}", delete(delete_workshop))
+        .route("/{id}/images", post(add_workshop_image))
+        .route("/{id}/images/{image_id}", delete(remove_workshop_image))
 }
 
 #[derive(Serialize)]

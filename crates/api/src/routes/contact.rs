@@ -16,8 +16,8 @@ pub fn router() -> Router {
     Router::new()
         .route("/", post(submit_contact))
         .route("/", get(list_contacts))
-        .route("/:id/read", patch(mark_read_contact))
-        .route("/:id", delete(delete_contact))
+        .route("/{id}/read", patch(mark_read_contact))
+        .route("/{id}", delete(delete_contact))
 }
 
 #[derive(Deserialize)]

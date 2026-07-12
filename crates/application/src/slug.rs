@@ -53,7 +53,7 @@ where
     }
 
     for _ in 1..max_attempts {
-        let suffix: u32 = rand::thread_rng().gen_range(1000..9999);
+        let suffix: u32 = rand::rng().random_range(1000..9999);
         let candidate = format!("{base_slug}-{suffix}");
         if check(candidate.clone()).await.unwrap_or(false) {
             return Ok(candidate);

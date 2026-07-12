@@ -29,8 +29,10 @@ impl LettreEmailSender {
             .build();
 
         let pattern = format!("{}/**/*.html", config.template_dir);
-        let templates = Tera::new(&pattern)
-            .map_err(|e| EmailError::InvalidEmail(format!("template load failed: {e}")))?;
+        let mut templates = Tera::new();
+        templates
+            .load_from_glob(&pattern)
+            .map_err(|e| EmailError::SendFailed(format!("template loading failed: {e}")))?;
 
         let from: Mailbox = format!("{} <{}>", config.from_name, config.from_email)
             .parse()
@@ -50,12 +52,8 @@ impl LettreEmailSender {
         context: &serde_json::Value,
     ) -> Result<String, EmailError> {
         let template_name = format!("{template}.html");
-        let mut tera_ctx = tera::Context::new();
-        if let Some(obj) = context.as_object() {
-            for (key, val) in obj {
-                tera_ctx.insert(key, val);
-            }
-        }
+        let tera_ctx = tera::Context::from_serialize(context)
+            .map_err(|e| EmailError::SendFailed(format!("context creation failed: {e}")))?;
         self.templates
             .render(&template_name, &tera_ctx)
             .map_err(|e| EmailError::SendFailed(format!("template render failed: {e}")))

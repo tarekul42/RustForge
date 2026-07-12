@@ -17,9 +17,9 @@ pub fn router() -> Router {
         .route("/me", patch(update_profile))
         .route("/me/registrations", get(list_registrations))
         .route("/", get(list_users))
-        .route("/:id", get(get_user))
-        .route("/:id", patch(admin_update_user))
-        .route("/:id", delete(admin_delete_user))
+        .route("/{id}", get(get_user))
+        .route("/{id}", patch(admin_update_user))
+        .route("/{id}", delete(admin_delete_user))
 }
 
 /// Response body for `GET /users/me` and `GET /users/:id`.

@@ -16,9 +16,9 @@ pub fn router() -> Router {
     Router::new()
         .route("/", get(list_levels))
         .route("/", post(create_level))
-        .route("/:id", get(get_level))
-        .route("/:id", patch(rename_level))
-        .route("/:id", delete(delete_level))
+        .route("/{id}", get(get_level))
+        .route("/{id}", patch(rename_level))
+        .route("/{id}", delete(delete_level))
 }
 
 #[derive(Serialize)]

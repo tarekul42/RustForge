@@ -15,12 +15,12 @@ use sw_domain::value_objects::ids::{ReviewId, WorkshopId};
 pub fn router() -> Router {
     Router::new()
         .route("/", post(create_review))
-        .route("/workshop/:workshop_id", get(list_reviews_for_workshop))
-        .route("/:id", get(get_review))
-        .route("/:id", patch(update_review))
-        .route("/:id/approve", patch(approve_review))
-        .route("/:id/reject", patch(reject_review))
-        .route("/:id", delete(delete_review))
+        .route("/workshop/{workshop_id}", get(list_reviews_for_workshop))
+        .route("/{id}", get(get_review))
+        .route("/{id}", patch(update_review))
+        .route("/{id}/approve", patch(approve_review))
+        .route("/{id}/reject", patch(reject_review))
+        .route("/{id}", delete(delete_review))
 }
 
 #[derive(Deserialize)]

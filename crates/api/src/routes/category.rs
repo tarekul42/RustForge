@@ -17,9 +17,9 @@ pub fn router() -> Router {
     Router::new()
         .route("/", get(list_categories))
         .route("/", post(create_category))
-        .route("/:slug", get(get_category_by_slug))
-        .route("/:id", patch(update_category))
-        .route("/:id", delete(delete_category))
+        .route("/{slug}", get(get_category_by_slug))
+        .route("/{id}", patch(update_category))
+        .route("/{id}", delete(delete_category))
 }
 
 #[derive(Serialize)]

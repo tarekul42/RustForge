@@ -20,7 +20,7 @@ pub fn router() -> Router {
         .route("/cancel", get(cancel_get).post(cancel_post))
         .route("/ipn", post(ipn_handler))
         .route("/refund", post(refund_handler))
-        .route("/invoice/:id", get(get_invoice_url))
+        .route("/invoice/{id}", get(get_invoice_url))
 }
 
 // ---------------------------------------------------------------------------

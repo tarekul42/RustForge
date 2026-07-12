@@ -16,7 +16,7 @@ pub fn router() -> Router {
     Router::new()
         .route("/", post(create_enrollment))
         .route("/my", get(my_enrollments))
-        .route("/:id", get(get_enrollment))
+        .route("/{id}", get(get_enrollment))
 }
 
 // ---------------------------------------------------------------------------

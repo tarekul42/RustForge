@@ -1,6 +1,6 @@
+use argon2::password_hash::rand_core::OsRng as ArgonOsRng;
 use argon2::password_hash::SaltString;
 use argon2::{Algorithm, Argon2, Params, PasswordHash, PasswordHasher, PasswordVerifier};
-use rand::rngs::OsRng;
 use sha2::{Digest, Sha256};
 
 /// Default argon2 parameters aligned with OWASP 2023 recommendations.
@@ -15,7 +15,7 @@ const ARGON2_PARALLELISM: u32 = 1;
 /// This function performs CPU-intensive work and should be called
 /// via `tokio::task::spawn_blocking` to avoid blocking the async runtime.
 pub fn hash_password(password: &str) -> Result<String, argon2::password_hash::Error> {
-    let salt = SaltString::generate(&mut OsRng);
+    let salt = SaltString::generate(&mut ArgonOsRng);
     let params = Params::new(ARGON2_MEMORY, ARGON2_ITERATIONS, ARGON2_PARALLELISM, None)?;
 
     let argon2 = Argon2::new(Algorithm::Argon2id, argon2::Version::V0x13, params);
@@ -49,9 +49,8 @@ pub fn hash_token(token: &str) -> String {
 
 /// Generate cryptographically-secure random bytes.
 pub fn generate_random_bytes(count: usize) -> Vec<u8> {
-    use rand::RngCore;
     let mut buf = vec![0u8; count];
-    OsRng.fill_bytes(&mut buf);
+    rand::fill(&mut buf[..]);
     buf
 }
 
