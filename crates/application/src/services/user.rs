@@ -68,16 +68,15 @@ impl<R: UserRepository, E: EventStore> UserAdminService<R, E> {
             user.name = name;
         }
         if let Some(role_str) = input.role {
-            let role = sw_domain::aggregates::user::UserRole::from_str(&role_str).ok_or_else(
-                || ApplicationError::validation(format!("Invalid role: {role_str}")),
-            )?;
+            let role = sw_domain::aggregates::user::UserRole::from_str(&role_str)
+                .ok_or_else(|| ApplicationError::validation(format!("Invalid role: {role_str}")))?;
             user.role = role;
         }
         if let Some(status_str) = input.status {
-            let status =
-                sw_domain::aggregates::user::UserStatus::from_str(&status_str).ok_or_else(
-                    || ApplicationError::validation(format!("Invalid status: {status_str}")),
-                )?;
+            let status = sw_domain::aggregates::user::UserStatus::from_str(&status_str)
+                .ok_or_else(|| {
+                    ApplicationError::validation(format!("Invalid status: {status_str}"))
+                })?;
             user.status = status;
         }
         if let Some(phone) = input.phone {
@@ -98,8 +97,10 @@ impl<R: UserRepository, E: EventStore> UserAdminService<R, E> {
 
         user.updated_at = chrono::Utc::now();
         self.repo.update(&user).await?;
-        self.publish_event(DomainEvent::UserUpdated { user_id: input.user_id })
-            .await?;
+        self.publish_event(DomainEvent::UserUpdated {
+            user_id: input.user_id,
+        })
+        .await?;
         Ok(user)
     }
 

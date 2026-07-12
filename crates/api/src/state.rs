@@ -35,8 +35,7 @@ pub struct AppState {
         >,
     >,
     /// Admin user management service.
-    pub user_admin_service:
-        Arc<UserAdminService<PostgresUserRepository, PostgresEventStore>>,
+    pub user_admin_service: Arc<UserAdminService<PostgresUserRepository, PostgresEventStore>>,
 }
 
 impl AppState {

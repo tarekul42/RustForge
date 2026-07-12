@@ -24,10 +24,7 @@ pub async fn origin_check_mw(
         _ => return Ok(next.run(req).await),
     };
 
-    let origin = req
-        .headers()
-        .get("Origin")
-        .and_then(|v| v.to_str().ok());
+    let origin = req.headers().get("Origin").and_then(|v| v.to_str().ok());
 
     match origin {
         Some(o) if origins.contains(&o.to_string()) => Ok(next.run(req).await),
