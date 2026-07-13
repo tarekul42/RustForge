@@ -926,7 +926,7 @@ impl PasswordAlgorithm {
         let mut user_value = [0u8; 48];
         let mut rng = rand::rng();
 
-        rng.fill(&mut user_value[32..]);
+        rng.fill(&mut user_value);
 
         let user_validation_salt = &user_value[32..][..8];
 
@@ -992,7 +992,7 @@ impl PasswordAlgorithm {
         let mut owner_value = [0u8; 48];
         let mut rng = rand::rng();
 
-        rng.fill(&mut owner_value[32..]);
+        rng.fill(&mut owner_value);
 
         let owner_validation_salt = &owner_value[32..][..8];
 
