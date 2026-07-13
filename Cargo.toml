@@ -48,4 +48,7 @@ lettre = { version = "0.11", features = ["builder", "smtp-transport", "tokio1-na
 tera = { version = "2", features = ["glob_fs"] }
 printpdf = "0.10"
 
+[patch.crates-io]
+lopdf = { path = "vendor/lopdf" }
+
 

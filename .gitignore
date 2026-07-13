@@ -11,3 +11,7 @@ Rust_Curriculum/
 MASTER_BOOTSTRAP_PROMPT.md
 
 AGENT.md
+
+# Dev files
+check_*.txt
+test_*.rs
