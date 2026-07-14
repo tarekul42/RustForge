@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Extension, Request},
+    extract::{Request, State},
     http::StatusCode,
     middleware::Next,
     response::Response,
@@ -12,7 +12,7 @@ use crate::state::AppState;
 ///
 /// Reads allowed origins from `AppState::config::allowed_origins`.
 pub async fn origin_check_mw(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     req: Request,
     next: Next,
 ) -> Result<Response, (StatusCode, &'static str)> {

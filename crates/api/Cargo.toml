@@ -25,6 +25,8 @@ cookie.workspace = true
 sqlx.workspace = true
 infer.workspace = true
 reqwest.workspace = true
+tower_governor = { version = "0.8", default-features = false, features = ["axum"] }
+governor = "0.10"
 
 [dev-dependencies]
 http-body-util = "0.1"

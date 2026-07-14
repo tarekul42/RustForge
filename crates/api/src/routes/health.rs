@@ -1,10 +1,11 @@
-use axum::{extract::Extension, http::HeaderMap, http::StatusCode, routing::get, Json, Router};
+use axum::{extract::State, http::HeaderMap, http::StatusCode, routing::get, Json, Router};
 use serde_json::{json, Value};
 use std::sync::Arc;
 use std::sync::OnceLock;
 use std::time::Instant;
 
 use crate::extractors::auth_user;
+use crate::middleware::request_id::get_current_request_id;
 use crate::state::AppState;
 
 static START_TIME: OnceLock<Instant> = OnceLock::new();
@@ -14,13 +15,13 @@ pub fn liveness_router() -> Router {
     Router::new().route("/", get(health))
 }
 
-/// Build the readiness health router (requires AppState via Extension).
-pub fn readiness_router() -> Router {
+/// Build the readiness health router (requires AppState).
+pub fn readiness_router() -> Router<Arc<AppState>> {
     Router::new().route("/ready", get(health_ready))
 }
 
 /// Build the admin dashboard router (requires admin auth).
-pub fn dashboard_router() -> Router {
+pub fn dashboard_router() -> Router<Arc<AppState>> {
     Router::new().route("/dashboard", get(health_dashboard))
 }
 
@@ -36,7 +37,7 @@ async fn health() -> Json<Value> {
 
 /// Readiness probe — returns 200 only if the app can serve traffic.
 async fn health_ready(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
     let start = Instant::now();
 
@@ -77,6 +78,7 @@ async fn health_ready(
             }
         })))
     } else {
+        let request_id = get_current_request_id();
         Err((
             StatusCode::SERVICE_UNAVAILABLE,
             Json(json!({
@@ -86,7 +88,7 @@ async fn health_ready(
                     "message": "Service not ready",
                     "details": null
                 },
-                "requestId": null
+                "requestId": request_id
             })),
         ))
     }
@@ -94,28 +96,32 @@ async fn health_ready(
 
 /// Admin dashboard — detailed health info (DB pool, queue depth, etc.).
 async fn health_dashboard(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: HeaderMap,
 ) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
     let auth = auth_user::resolve_auth_user(&headers, &state)
         .await
         .map_err(|(code, msg)| {
+            let request_id = get_current_request_id();
             (
                 code,
                 Json(json!({
                     "success": false,
-                    "error": { "code": "UNAUTHORIZED", "message": msg }
+                    "error": { "code": "UNAUTHORIZED", "message": msg },
+                    "requestId": request_id
                 })),
             )
         })?;
 
     use sw_domain::aggregates::user::UserRole;
     if !matches!(auth.role, UserRole::Admin | UserRole::SuperAdmin) {
+        let request_id = get_current_request_id();
         return Err((
             StatusCode::FORBIDDEN,
             Json(json!({
                 "success": false,
-                "error": { "code": "FORBIDDEN", "message": "Admin access required" }
+                "error": { "code": "FORBIDDEN", "message": "Admin access required" },
+                "requestId": request_id
             })),
         ));
     }

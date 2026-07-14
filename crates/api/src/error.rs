@@ -4,6 +4,8 @@ use axum::Json;
 use serde_json::json;
 use sw_application::error::ApplicationError;
 
+use crate::middleware::request_id::get_current_request_id;
+
 /// Top-level API error type that implements `IntoResponse`.
 ///
 /// Every handler should return `Result<impl IntoResponse, ApiError>`.
@@ -50,7 +52,7 @@ impl IntoResponse for ApiError {
                 "INTERNAL",
                 "Internal server error",
             ),
-            ApiError::BadRequest(ref msg) => (StatusCode::BAD_REQUEST, "BAD_REQUEST", msg.as_str()),
+            ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, "BAD_REQUEST", msg.as_str()),
             ApiError::NotFound => (StatusCode::NOT_FOUND, "NOT_FOUND", "Resource not found"),
             ApiError::Conflict(msg) => (StatusCode::CONFLICT, "CONFLICT", msg.as_str()),
             ApiError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, "UNAUTHORIZED", msg.as_str()),
@@ -69,6 +71,8 @@ impl IntoResponse for ApiError {
             ),
         };
 
+        let request_id = get_current_request_id();
+
         let body = json!({
             "success": false,
             "error": {
@@ -76,7 +80,7 @@ impl IntoResponse for ApiError {
                 "message": message,
                 "details": null
             },
-            "requestId": null
+            "requestId": request_id
         });
 
         (status, Json(body)).into_response()

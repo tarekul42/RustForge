@@ -2,8 +2,9 @@
 # Multi-stage production build for Skill Workshop Platform.
 
 # Stage 1: Planner (cargo-chef)
-FROM rust:1.81-alpine3.20 AS chef
-RUN apk add --no-cache musl-dev && \
+FROM rust:1.90-bookworm AS chef
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config && rm -rf /var/lib/apt/lists/* && \
     cargo install cargo-chef --version 0.1.70
 WORKDIR /app
 

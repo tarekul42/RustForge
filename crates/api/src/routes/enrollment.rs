@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Extension, Path},
+    extract::{Path, State},
     routing::{get, post},
     Json, Router,
 };
@@ -12,7 +12,7 @@ use crate::state::AppState;
 use sw_domain::value_objects::ids::{EnrollmentId, WorkshopId};
 
 /// Build the enrollment router — all paths are relative to `/api/v1/enrollments`.
-pub fn router() -> Router {
+pub fn router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/", post(create_enrollment))
         .route("/my", get(my_enrollments))
@@ -56,7 +56,7 @@ struct EnrollmentResponse {
 // ---------------------------------------------------------------------------
 
 async fn create_enrollment(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Json(payload): Json<CreateEnrollmentRequest>,
 ) -> Result<Json<CreateEnrollmentResponse>, ApiError> {
@@ -87,7 +87,7 @@ async fn create_enrollment(
 }
 
 async fn my_enrollments(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> Result<Json<Vec<EnrollmentResponse>>, ApiError> {
     let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
@@ -112,7 +112,7 @@ async fn my_enrollments(
 }
 
 async fn get_enrollment(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<String>,
 ) -> Result<Json<EnrollmentResponse>, ApiError> {

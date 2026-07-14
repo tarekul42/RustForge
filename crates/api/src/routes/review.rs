@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Extension, Path},
+    extract::{Path, State},
     routing::{delete, get, patch, post},
     Json, Router,
 };
@@ -12,7 +12,7 @@ use crate::state::AppState;
 use sw_domain::value_objects::ids::{ReviewId, WorkshopId};
 
 /// Build the review router — all paths are relative to `/api/v1/reviews`.
-pub fn router() -> Router {
+pub fn router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/", post(create_review))
         .route("/workshop/{workshop_id}", get(list_reviews_for_workshop))
@@ -52,7 +52,7 @@ struct ReviewResponse {
 }
 
 async fn create_review(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Json(payload): Json<CreateReviewRequest>,
 ) -> Result<Json<ReviewResponse>, ApiError> {
@@ -76,7 +76,7 @@ async fn create_review(
 }
 
 async fn list_reviews_for_workshop(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Path(workshop_id): Path<String>,
 ) -> Result<Json<Vec<ReviewResponse>>, ApiError> {
     let workshop_id = WorkshopId::parse_str(&workshop_id)
@@ -92,7 +92,7 @@ async fn list_reviews_for_workshop(
 }
 
 async fn get_review(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Path(id): Path<String>,
 ) -> Result<Json<ReviewResponse>, ApiError> {
     let review_id = ReviewId::parse_str(&id)
@@ -108,7 +108,7 @@ async fn get_review(
 }
 
 async fn update_review(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<String>,
     Json(payload): Json<UpdateReviewRequest>,
@@ -145,7 +145,7 @@ async fn update_review(
 }
 
 async fn approve_review(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<String>,
 ) -> Result<Json<ReviewResponse>, ApiError> {
@@ -163,7 +163,7 @@ async fn approve_review(
 }
 
 async fn reject_review(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<String>,
 ) -> Result<Json<ReviewResponse>, ApiError> {
@@ -181,7 +181,7 @@ async fn reject_review(
 }
 
 async fn delete_review(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<String>,
 ) -> Result<Json<serde_json::Value>, ApiError> {

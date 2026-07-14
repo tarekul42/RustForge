@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Extension, Path},
+    extract::{Path, State},
     routing::{delete, get, patch},
     Json, Router,
 };
@@ -11,7 +11,7 @@ use crate::extractors::session;
 use crate::state::AppState;
 
 /// Build the user router — all paths are relative to `/api/v1/users`.
-pub fn router() -> Router {
+pub fn router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/me", get(get_profile))
         .route("/me", patch(update_profile))
@@ -80,7 +80,7 @@ struct AdminUpdateUserRequest {
 }
 
 async fn get_profile(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> Result<Json<UserProfileResponse>, ApiError> {
     let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
@@ -98,7 +98,7 @@ async fn get_profile(
 }
 
 async fn update_profile(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Json(payload): Json<UpdateProfileRequest>,
 ) -> Result<Json<UserProfileResponse>, ApiError> {
@@ -124,7 +124,7 @@ async fn update_profile(
 }
 
 async fn list_registrations(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> Result<Json<Vec<RegistrationResponse>>, ApiError> {
     let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
@@ -145,7 +145,7 @@ async fn list_registrations(
 }
 
 async fn list_users(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> Result<Json<Vec<UserProfileResponse>>, ApiError> {
     let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
@@ -171,7 +171,7 @@ async fn list_users(
 }
 
 async fn get_user(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,
 ) -> Result<Json<UserProfileResponse>, ApiError> {
@@ -196,7 +196,7 @@ async fn get_user(
 }
 
 async fn admin_update_user(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,
     Json(payload): Json<AdminUpdateUserRequest>,
@@ -234,7 +234,7 @@ async fn admin_update_user(
 }
 
 async fn admin_delete_user(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,
 ) -> Result<Json<serde_json::Value>, ApiError> {

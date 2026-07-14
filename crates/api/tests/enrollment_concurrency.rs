@@ -6,7 +6,7 @@
 //!   DATABASE_URL=postgres://user:pass@localhost:5432/test cargo test --test enrollment_concurrency -- --ignored
 
 use axum::http::StatusCode;
-use sw_api::app::build_app;
+use sw_api::app::build_liveness_router;
 use sw_api::state::AppState;
 use sw_shared::config::Config;
 

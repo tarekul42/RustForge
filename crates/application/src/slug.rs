@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::RngExt;
 
 /// Convert a human-readable title into a URL-safe slug.
 ///

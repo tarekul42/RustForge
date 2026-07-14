@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Extension, Path},
+    extract::{Path, State},
     routing::{delete, get, patch, post},
     Json, Router,
 };
@@ -13,7 +13,7 @@ use sw_application::slug::generate_slug;
 use sw_domain::value_objects::ids::CategoryId;
 
 /// Build the category router — all paths are relative to `/api/v1/categories`.
-pub fn router() -> Router {
+pub fn router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/", get(list_categories))
         .route("/", post(create_category))
@@ -63,7 +63,7 @@ struct UpdateCategoryRequest {
 }
 
 async fn create_category(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Json(payload): Json<CreateCategoryRequest>,
 ) -> Result<Json<CategoryResponse>, ApiError> {
@@ -88,7 +88,7 @@ async fn create_category(
 }
 
 async fn list_categories(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<CategoryResponse>>, ApiError> {
     let categories = state.category_service.list().await?;
     Ok(Json(
@@ -97,7 +97,7 @@ async fn list_categories(
 }
 
 async fn get_category_by_slug(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Path(slug): Path<String>,
 ) -> Result<Json<CategoryResponse>, ApiError> {
     let category = state.category_service.get_by_slug(&slug).await?;
@@ -105,7 +105,7 @@ async fn get_category_by_slug(
 }
 
 async fn update_category(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,
     Json(payload): Json<UpdateCategoryRequest>,
@@ -130,7 +130,7 @@ async fn update_category(
 }
 
 async fn delete_category(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,
 ) -> Result<Json<serde_json::Value>, ApiError> {

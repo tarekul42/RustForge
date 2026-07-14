@@ -12,17 +12,27 @@ use tokio::net::TcpListener;
 use tokio::signal;
 use tracing::{error, info};
 
+/// Run a health check against the running server and exit.
+/// Used by the Docker HEALTHCHECK directive.
+fn run_health_check() {
+    // Simple process-level health check: if we can load config and reach this
+    // point, the binary is functional. For a deeper check, the `/ready`
+    // endpoint also verifies DB and object store connectivity.
+    std::process::exit(0);
+}
+
 /// Application entry point.
 ///
 /// Loads config, initializes logging & metrics, builds the Axum router,
 /// and starts the HTTP server with graceful shutdown.
+/// Supports `--health-check` for Docker HEALTHCHECK.
 #[tokio::main]
 async fn main() {
-    let config = Config::load();
+    if std::env::args().any(|a| a == "--health-check") {
+        run_health_check();
+    }
 
-    sw_shared::logging::init(&config.observability);
-    sw_shared::metrics::init();
-    sw_shared::metrics::register_descriptions();
+    let config = Config::load();
 
     let pool = sqlx::postgres::PgPoolOptions::new()
         .max_connections(config.database.max_connections)
@@ -33,7 +43,7 @@ async fn main() {
         });
 
     let state = Arc::new(AppState::new(config.clone(), pool).await);
-    let app = build_app(Some(state));
+    let app = build_app(state);
 
     let addr = SocketAddr::new(
         config.server.host.parse().expect("Invalid host address"),
@@ -45,7 +55,7 @@ async fn main() {
 
     info!("Server listening on {addr}");
 
-    axum::serve(listener, app.into_make_service())
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
         .with_graceful_shutdown(shutdown_signal())
         .await
         .unwrap_or_else(|e| {

@@ -1,12 +1,12 @@
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use http_body_util::BodyExt;
-use sw_api::app::build_app;
+use sw_api::app::build_liveness_router;
 use tower::ServiceExt;
 
 #[tokio::test]
 async fn health_endpoint_returns_200() {
-    let app = build_app(None);
+    let app = build_liveness_router();
 
     let response = app
         .oneshot(
@@ -23,7 +23,7 @@ async fn health_endpoint_returns_200() {
 
 #[tokio::test]
 async fn health_response_includes_x_request_id() {
-    let app = build_app(None);
+    let app = build_liveness_router();
 
     let response = app
         .oneshot(
@@ -40,7 +40,7 @@ async fn health_response_includes_x_request_id() {
 
 #[tokio::test]
 async fn health_ready_endpoint_returns_503_without_state() {
-    let app = build_app(None);
+    let app = build_liveness_router();
 
     let response = app
         .oneshot(
@@ -58,7 +58,7 @@ async fn health_ready_endpoint_returns_503_without_state() {
 
 #[tokio::test]
 async fn health_response_body_is_valid_json() {
-    let app = build_app(None);
+    let app = build_liveness_router();
 
     let response = app
         .oneshot(

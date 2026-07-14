@@ -1,4 +1,4 @@
-use axum::{extract::Extension, routing::get, Json, Router};
+use axum::{extract::State, routing::get, Json, Router};
 use serde::Serialize;
 use std::sync::Arc;
 
@@ -7,7 +7,7 @@ use crate::extractors::session;
 use crate::state::AppState;
 
 /// Build the stats router — all paths are relative to `/api/v1/stats`.
-pub fn router() -> Router {
+pub fn router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/", get(platform_stats))
         .route("/ratings", get(workshop_ratings))
@@ -29,7 +29,7 @@ struct WorkshopRatingResponse {
 }
 
 async fn platform_stats(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> Result<Json<PlatformStatsResponse>, ApiError> {
     let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
@@ -47,7 +47,7 @@ async fn platform_stats(
 }
 
 async fn workshop_ratings(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> Result<Json<Vec<WorkshopRatingResponse>>, ApiError> {
     let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;

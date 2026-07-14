@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Extension, Path},
+    extract::{Path, State},
     routing::{delete, get, patch, post},
     Json, Router,
 };
@@ -12,7 +12,7 @@ use crate::state::AppState;
 use sw_domain::value_objects::ids::LevelId;
 
 /// Build the levels sub-router — mounted at `/api/v1/workshops/levels`.
-pub fn router() -> Router {
+pub fn router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/", get(list_levels))
         .route("/", post(create_level))
@@ -51,7 +51,7 @@ struct RenameLevelRequest {
 }
 
 async fn create_level(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Json(payload): Json<CreateLevelRequest>,
 ) -> Result<Json<LevelResponse>, ApiError> {
@@ -65,14 +65,14 @@ async fn create_level(
 }
 
 async fn list_levels(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<LevelResponse>>, ApiError> {
     let levels = state.level_service.list().await?;
     Ok(Json(levels.into_iter().map(LevelResponse::from).collect()))
 }
 
 async fn get_level(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Path(id): Path<uuid::Uuid>,
 ) -> Result<Json<LevelResponse>, ApiError> {
     let level = state
@@ -83,7 +83,7 @@ async fn get_level(
 }
 
 async fn rename_level(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,
     Json(payload): Json<RenameLevelRequest>,
@@ -101,7 +101,7 @@ async fn rename_level(
 }
 
 async fn delete_level(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,
 ) -> Result<Json<serde_json::Value>, ApiError> {

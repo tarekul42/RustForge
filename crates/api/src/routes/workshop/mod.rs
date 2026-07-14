@@ -2,7 +2,7 @@
 pub mod levels;
 
 use axum::{
-    extract::{Extension, Path},
+    extract::{Path, State},
     routing::{delete, get, patch, post},
     Json, Router,
 };
@@ -17,7 +17,7 @@ use sw_application::slug::generate_slug;
 use sw_domain::value_objects::ids::{CategoryId, LevelId, WorkshopId, WorkshopImageId};
 
 /// Build the workshop router — all paths are relative to `/api/v1/workshops`.
-pub fn router() -> Router {
+pub fn router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/", get(list_workshops))
         .route("/", post(create_workshop))
@@ -93,7 +93,7 @@ struct AddImageRequest {
 }
 
 async fn create_workshop(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Json(payload): Json<CreateWorkshopRequest>,
 ) -> Result<Json<WorkshopResponse>, ApiError> {
@@ -150,7 +150,7 @@ async fn create_workshop(
 }
 
 async fn list_workshops(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<WorkshopResponse>>, ApiError> {
     let workshops = state.workshop_service.list().await?;
     let mut responses = Vec::with_capacity(workshops.len());
@@ -162,7 +162,7 @@ async fn list_workshops(
 }
 
 async fn get_workshop_by_slug(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Path(slug): Path<String>,
 ) -> Result<Json<WorkshopResponse>, ApiError> {
     let workshop = state.workshop_service.get_by_slug(&slug).await?;
@@ -171,7 +171,7 @@ async fn get_workshop_by_slug(
 }
 
 async fn update_workshop(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,
     Json(payload): Json<UpdateWorkshopRequest>,
@@ -233,7 +233,7 @@ async fn update_workshop(
 }
 
 async fn delete_workshop(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,
 ) -> Result<Json<serde_json::Value>, ApiError> {
@@ -251,7 +251,7 @@ async fn delete_workshop(
 }
 
 async fn add_workshop_image(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,
     Json(payload): Json<AddImageRequest>,
@@ -278,7 +278,7 @@ async fn add_workshop_image(
 }
 
 async fn remove_workshop_image(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path((_workshop_id, image_id)): Path<(uuid::Uuid, uuid::Uuid)>,
 ) -> Result<Json<serde_json::Value>, ApiError> {

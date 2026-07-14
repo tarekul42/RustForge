@@ -1,5 +1,5 @@
 use axum::{
-    extract::Extension,
+    extract::State,
     http::HeaderMap,
     response::{IntoResponse, Response},
     routing::{get, post},
@@ -32,7 +32,7 @@ fn with_session_cookie<T: Serialize>(
 }
 
 /// Build the auth router — all paths are relative to `/api/v1/auth`.
-pub fn router() -> Router {
+pub fn router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/register", post(register))
         .route("/login", post(login))
@@ -128,7 +128,7 @@ pub struct LogoutResponse {
 
 /// Register a new user with email and password.
 async fn register(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Json(payload): Json<RegisterRequest>,
 ) -> Result<Response, ApiError> {
     let result = state
@@ -153,7 +153,7 @@ async fn register(
 
 /// Log in with email and password.
 async fn login(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<Response, ApiError> {
     let result = state
@@ -174,7 +174,7 @@ async fn login(
 
 /// Request an OTP code to be sent to the user's email.
 async fn request_otp(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Json(payload): Json<RequestOtpRequest>,
 ) -> Result<Json<serde_json::Value>, ApiError> {
     state.auth_service.request_otp(&payload.email).await?;
@@ -183,7 +183,7 @@ async fn request_otp(
 
 /// Verify an OTP code for the given email.
 async fn verify_otp(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Json(payload): Json<VerifyOtpRequest>,
 ) -> Result<Json<serde_json::Value>, ApiError> {
     state
@@ -195,7 +195,7 @@ async fn verify_otp(
 
 /// Return current session info (user ID, email, role).
 async fn session_handler(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> Result<Json<SessionResponse>, ApiError> {
     let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
@@ -209,7 +209,7 @@ async fn session_handler(
 
 /// Invalidate session cookie.
 async fn logout(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> Result<Json<LogoutResponse>, ApiError> {
     let (session_id, _user_id) = session::resolve_session(&headers, &state).await?;

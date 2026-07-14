@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Extension, Path, Query},
+    extract::{Path, Query, State},
     routing::{delete, get, patch, post},
     Json, Router,
 };
@@ -12,7 +12,7 @@ use crate::state::AppState;
 use sw_domain::value_objects::ids::ContactId;
 
 /// Build the contact router — all paths are relative to `/api/v1/contacts`.
-pub fn router() -> Router {
+pub fn router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/", post(submit_contact))
         .route("/", get(list_contacts))
@@ -46,7 +46,7 @@ struct ContactResponse {
 }
 
 async fn submit_contact(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Json(payload): Json<SubmitContactRequest>,
 ) -> Result<Json<ContactResponse>, ApiError> {
     let contact = state
@@ -63,7 +63,7 @@ async fn submit_contact(
 }
 
 async fn list_contacts(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Query(query): Query<ListContactsQuery>,
 ) -> Result<Json<Vec<ContactResponse>>, ApiError> {
@@ -78,7 +78,7 @@ async fn list_contacts(
 }
 
 async fn mark_read_contact(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<String>,
 ) -> Result<Json<ContactResponse>, ApiError> {
@@ -96,7 +96,7 @@ async fn mark_read_contact(
 }
 
 async fn delete_contact(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<String>,
 ) -> Result<Json<serde_json::Value>, ApiError> {

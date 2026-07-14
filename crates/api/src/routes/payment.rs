@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Extension, Form, Path, Query},
+    extract::{Form, Path, Query, State},
     routing::{get, post},
     Json, Router,
 };
@@ -13,7 +13,7 @@ use crate::state::AppState;
 use sw_domain::value_objects::ids::PaymentId;
 
 /// Build the payment router — all paths are relative to `/api/v1/payments`.
-pub fn router() -> Router {
+pub fn router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/success", get(success_get).post(success_post))
         .route("/fail", get(fail_get).post(fail_post))
@@ -67,7 +67,7 @@ struct InvoiceResponse {
 // ---------------------------------------------------------------------------
 
 async fn success_get(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Query(payload): Query<PaymentCallback>,
 ) -> Result<Json<PaymentResponse>, ApiError> {
     let transaction_id = payload
@@ -95,14 +95,14 @@ async fn success_get(
 }
 
 async fn success_post(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Form(payload): Form<PaymentCallback>,
 ) -> Result<Json<PaymentResponse>, ApiError> {
-    success_get(Extension(state), Query(payload)).await
+    success_get(State(state), Query(payload)).await
 }
 
 async fn fail_get(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Query(payload): Query<PaymentCallback>,
 ) -> Result<Json<PaymentResponse>, ApiError> {
     let transaction_id = payload
@@ -124,14 +124,14 @@ async fn fail_get(
 }
 
 async fn fail_post(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Form(payload): Form<PaymentCallback>,
 ) -> Result<Json<PaymentResponse>, ApiError> {
-    fail_get(Extension(state), Query(payload)).await
+    fail_get(State(state), Query(payload)).await
 }
 
 async fn cancel_get(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Query(payload): Query<PaymentCallback>,
 ) -> Result<Json<PaymentResponse>, ApiError> {
     let transaction_id = payload
@@ -156,14 +156,14 @@ async fn cancel_get(
 }
 
 async fn cancel_post(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Form(payload): Form<PaymentCallback>,
 ) -> Result<Json<PaymentResponse>, ApiError> {
-    cancel_get(Extension(state), Query(payload)).await
+    cancel_get(State(state), Query(payload)).await
 }
 
 async fn ipn_handler(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Form(payload): Form<HashMap<String, String>>,
 ) -> Result<Json<IpnResponse>, ApiError> {
     state.payment_service.handle_ipn(&payload).await?;
@@ -175,7 +175,7 @@ async fn ipn_handler(
 }
 
 async fn refund_handler(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Json(payload): Json<RefundRequest>,
 ) -> Result<Json<PaymentResponse>, ApiError> {
@@ -213,7 +213,7 @@ async fn refund_handler(
 }
 
 async fn get_invoice_url(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<String>,
 ) -> Result<Json<InvoiceResponse>, ApiError> {
