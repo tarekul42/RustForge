@@ -6,8 +6,8 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-sw-domain = { path = "../domain" }
-sw-shared = { path = "../shared" }
+sw-domain = { version = "0.1", path = "../domain" }
+sw-shared = { version = "0.1", path = "../shared" }
 serde.workspace = true
 thiserror.workspace = true
 tracing.workspace = true

@@ -26,6 +26,15 @@ impl S3ObjectStore {
 
 #[async_trait::async_trait]
 impl ObjectStore for S3ObjectStore {
+    async fn health_check(&self) -> Result<(), ObjectStoreError> {
+        self.client
+            .list_buckets()
+            .send()
+            .await
+            .map_err(|e| ObjectStoreError::S3Error(e.to_string()))?;
+        Ok(())
+    }
+
     async fn upload(
         &self,
         bucket: &str,

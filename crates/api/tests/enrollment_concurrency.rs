@@ -34,7 +34,7 @@ async fn setup_app() -> AppState {
         .await
         .expect("Failed to run migrations");
 
-    AppState::new(config, pool)
+    AppState::new(config, pool).await
 }
 
 #[tokio::test]

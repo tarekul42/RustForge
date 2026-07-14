@@ -1,4 +1,13 @@
 #![deny(missing_docs)]
+#![allow(
+    clippy::doc_markdown,
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc,
+    clippy::must_use_candidate,
+    clippy::return_self_not_must_use,
+    clippy::uninlined_format_args,
+    clippy::wildcard_imports
+)]
 #![doc = "Domain crate: pure business logic — no I/O dependencies."]
 
 /// Domain aggregates (User, Workshop, Enrollment, Payment, Review).

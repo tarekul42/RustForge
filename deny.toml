@@ -1,0 +1,51 @@
+[advisories]
+ignore = [
+    # RUSTSEC-2023-0071: rsa 0.9.10 (Marvin Attack) is pulled by sqlx-mysql which
+    # is not compiled — we only use the `postgres` feature of sqlx.
+    "RUSTSEC-2023-0071",
+    # RUSTSEC-2025-0141: bincode is unmaintained. Transitive via printpdf (invoice gen).
+    # No safe upgrade available. Accepting risk for non-critical feature.
+    "RUSTSEC-2025-0141",
+    # RUSTSEC-2024-0370: proc-macro-error is unmaintained. Transitive via ouroboros → printpdf.
+    "RUSTSEC-2024-0370",
+    # RUSTSEC-2026-0173: proc-macro-error2 is unmaintained. Transitive via validator_derive.
+    # Accepting risk — the crate still compiles and works correctly.
+    "RUSTSEC-2026-0173",
+    # RUSTSEC-2026-0192: ttf-parser is unmaintained. Transitive via lopdf → printpdf.
+    "RUSTSEC-2026-0192",
+    # RUSTSEC-2026-0098 / RUSTSEC-2026-0099 / RUSTSEC-2026-0104: rustls-webpki vulnerabilities.
+    # Transitive via AWS SDK (aws-smithy-http-client → rustls 0.21.x). The fix is in
+    # rustls-webpki >=0.103.12 but AWS SDK hasn't updated yet. Tracked upstream.
+    "RUSTSEC-2026-0098",
+    "RUSTSEC-2026-0099",
+    "RUSTSEC-2026-0104",
+]
+
+[licenses]
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "Zlib",
+    "0BSD",
+    "MPL-2.0",
+    "CDLA-Permissive-2.0",
+    "CC0-1.0",
+    "OpenSSL",
+]
+confidence-threshold = 0.8
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

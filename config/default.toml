@@ -11,6 +11,7 @@ statement_timeout_secs = 30
 [observability]
 log_level = "info"
 metrics_port = 5001
+metrics_api_key = ""
 trace_sample_ratio = 1.0
 
 [payment]

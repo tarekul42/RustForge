@@ -1,4 +1,5 @@
 #![deny(missing_docs)]
+#![allow(clippy::ignored_unit_patterns)]
 #![doc = "API binary: HTTP server entry point for the Skill Workshop Platform."]
 
 use std::net::SocketAddr;
@@ -31,7 +32,7 @@ async fn main() {
             panic!("Failed to connect to database: {e}");
         });
 
-    let state = Arc::new(AppState::new(config.clone(), pool));
+    let state = Arc::new(AppState::new(config.clone(), pool).await);
     let app = build_app(Some(state));
 
     let addr = SocketAddr::new(

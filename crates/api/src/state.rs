@@ -9,6 +9,7 @@ use sw_application::services::review::ReviewService;
 use sw_application::services::stats::StatsService;
 use sw_application::services::user::UserAdminService;
 use sw_application::services::workshop::WorkshopService;
+use sw_infrastructure::object_store::s3::S3ObjectStore;
 use sw_infrastructure::payment::SslCommerzClient;
 use sw_infrastructure::postgres::repos::category::PostgresCategoryRepository;
 use sw_infrastructure::postgres::repos::contact::PostgresContactRepository;
@@ -25,6 +26,7 @@ use sw_infrastructure::postgres::repos::stats::PostgresStatsRepository;
 use sw_infrastructure::postgres::repos::user::PostgresUserRepository;
 use sw_infrastructure::postgres::repos::workshop::PostgresWorkshopRepository;
 use sw_shared::config::Config;
+use sw_shared::object_store::ObjectStore;
 
 /// Shared application state accessible from all handlers.
 #[derive(Clone)]
@@ -33,6 +35,8 @@ pub struct AppState {
     pub config: Arc<Config>,
     /// Database connection pool for ad-hoc queries (health checks, etc.).
     pub pool: sqlx::PgPool,
+    /// S3/MinIO object store for file storage.
+    pub object_store: Arc<dyn ObjectStore>,
     /// Auth / user service wired to infrastructure repos.
     pub auth_service: Arc<
         AuthService<
@@ -96,7 +100,7 @@ pub struct AppState {
 
 impl AppState {
     /// Create a new `AppState` from a loaded `Config` and a DB pool.
-    pub fn new(config: Config, pool: sqlx::PgPool) -> Self {
+    pub async fn new(config: Config, pool: sqlx::PgPool) -> Self {
         let user_repo = PostgresUserRepository::new(pool.clone());
         let session_repo = PostgresSessionRepository::new(pool.clone());
         let otp_repo = PostgresOtpRepository::new(pool.clone());
@@ -121,9 +125,14 @@ impl AppState {
         };
         let sslcommerz_client = SslCommerzClient::new(sslcommerz_config);
 
+        let object_store = S3ObjectStore::from_env()
+            .await
+            .unwrap_or_else(|e| panic!("Failed to create S3 object store: {e}"));
+
         Self {
             config: Arc::new(config.clone()),
             pool: pool.clone(),
+            object_store: Arc::new(object_store),
             auth_service: Arc::new(AuthService::new(
                 user_repo,
                 session_repo,

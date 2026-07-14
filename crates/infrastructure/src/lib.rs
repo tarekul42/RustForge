@@ -1,3 +1,19 @@
+#![allow(
+    clippy::cast_possible_wrap,
+    clippy::cast_precision_loss,
+    clippy::doc_markdown,
+    clippy::match_same_arms,
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc,
+    clippy::must_use_candidate,
+    clippy::needless_raw_string_hashes,
+    clippy::redundant_closure_for_method_calls,
+    clippy::return_self_not_must_use,
+    clippy::too_many_lines,
+    clippy::uninlined_format_args,
+    clippy::unnecessary_wraps,
+    clippy::wildcard_imports
+)]
 #![doc = "Infrastructure crate: adapters for all external I/O."]
 
 /// Email sender implementation (lettre + tera).

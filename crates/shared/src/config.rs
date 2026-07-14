@@ -12,7 +12,7 @@ pub struct Config {
     #[serde(default)]
     pub server: ServerConfig,
 
-    /// PostgreSQL connection configuration.
+    /// `PostgreSQL` connection configuration.
     #[serde(default)]
     #[validate(nested)]
     pub database: DatabaseConfig,
@@ -25,7 +25,7 @@ pub struct Config {
     #[serde(default)]
     pub allowed_origins: Option<Vec<String>>,
 
-    /// Payment gateway (SSLCommerz) configuration.
+    /// Payment gateway (`SSLCommerz`) configuration.
     #[serde(default)]
     pub payment: PaymentConfig,
 
@@ -58,7 +58,7 @@ pub struct ServerConfig {
     pub workers: u32,
 }
 
-/// PostgreSQL connection settings.
+/// `PostgreSQL` connection settings.
 #[derive(Debug, Deserialize, Validate, Clone)]
 pub struct DatabaseConfig {
     /// Postgres connection URL (required).
@@ -85,6 +85,10 @@ pub struct ObservabilityConfig {
     #[serde(default = "default_metrics_port")]
     pub metrics_port: u16,
 
+    /// API key for accessing the `/metrics` endpoint.
+    #[serde(default)]
+    pub metrics_api_key: String,
+
     /// Optional OTLP gRPC endpoint for distributed tracing.
     #[serde(default)]
     pub otlp_endpoint: Option<String>,
@@ -94,13 +98,13 @@ pub struct ObservabilityConfig {
     pub trace_sample_ratio: f64,
 }
 
-/// Payment gateway (SSLCommerz) configuration.
+/// Payment gateway (`SSLCommerz`) configuration.
 #[derive(Debug, Deserialize, Clone)]
 pub struct PaymentConfig {
-    /// SSLCommerz store ID.
+    /// `SSLCommerz` store ID.
     #[serde(default)]
     pub store_id: String,
-    /// SSLCommerz store password.
+    /// `SSLCommerz` store password.
     #[serde(default)]
     pub store_passwd: String,
     /// Base URL (sandbox or production).
@@ -303,6 +307,7 @@ impl Default for ObservabilityConfig {
         Self {
             log_level: default_log_level(),
             metrics_port: default_metrics_port(),
+            metrics_api_key: String::new(),
             otlp_endpoint: None,
             trace_sample_ratio: default_trace_sample_ratio(),
         }
@@ -317,7 +322,10 @@ impl Config {
     /// 2. `config/default.toml`
     /// 3. Environment variables prefixed with `APP_`, nested with `__`
     ///
+    /// # Panics
+    ///
     /// Panics if required fields are missing or validation fails.
+    #[must_use]
     pub fn load() -> Self {
         let config: Config = Figment::new()
             .merge(Toml::file("config/default.toml"))

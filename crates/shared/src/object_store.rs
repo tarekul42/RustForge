@@ -1,6 +1,11 @@
 /// Interface for file storage (S3/MinIO).
 #[async_trait::async_trait]
 pub trait ObjectStore: Send + Sync {
+    /// Check connectivity to the object store.
+    async fn health_check(&self) -> Result<(), ObjectStoreError> {
+        Ok(())
+    }
+
     /// Upload a file to the store. Returns the public URL.
     async fn upload(
         &self,

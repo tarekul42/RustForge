@@ -6,7 +6,7 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-sw-shared = { path = "../shared" }
+sw-shared = { version = "0.1", path = "../shared" }
 serde.workspace = true
 thiserror.workspace = true
 uuid.workspace = true

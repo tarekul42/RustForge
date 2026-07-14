@@ -1,0 +1,351 @@
+{
+  "title": "Skill Workshop Platform",
+  "uid": "skill-workshop-platform",
+  "tags": ["rust", "skill-workshop"],
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "timezone": "utc",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "env",
+        "type": "constant",
+        "label": "Environment",
+        "query": "production",
+        "current": { "text": "production", "value": "production" }
+      },
+      {
+        "name": "job_type",
+        "type": "custom",
+        "label": "Job Type",
+        "query": "send_email, generate_invoice",
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "HTTP Request Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total{env=~\"$env\"}[5m])",
+          "legendFormat": "{{ method }} {{ route }}",
+          "intervalFactor": 2
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "cps",
+          "min": 0,
+          "custom": { "spanNulls": true }
+        }
+      }
+    },
+    {
+      "title": "P99 Latency",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{env=~\"$env\"}[5m])) by (le, route))",
+          "legendFormat": "{{ route }}",
+          "intervalFactor": 2
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "custom": { "spanNulls": true }
+        }
+      }
+    },
+    {
+      "title": "In-Flight Requests",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "http_in_flight_requests{env=~\"$env\"}",
+          "legendFormat": "in_flight"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "min": 0, "custom": { "spanNulls": true } }
+      }
+    },
+    {
+      "title": "DB Connections",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 8 },
+      "targets": [
+        {
+          "expr": "db_connections_active{env=~\"$env\"}",
+          "legendFormat": "active"
+        },
+        {
+          "expr": "db_connections_idle{env=~\"$env\"}",
+          "legendFormat": "idle"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "min": 0, "custom": { "spanNulls": true } }
+      }
+    },
+    {
+      "title": "DB Query Latency (P99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(db_query_duration_seconds_bucket{env=~\"$env\"}[5m])) by (le, operation))",
+          "legendFormat": "{{ operation }}",
+          "intervalFactor": 2
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "custom": { "spanNulls": true }
+        }
+      }
+    },
+    {
+      "title": "HTTP Error Rate (4xx/5xx)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{env=~\"$env\", status_code=~\"4..\"}[5m])) / sum(rate(http_requests_total{env=~\"$env\"}[5m]))",
+          "legendFormat": "4xx rate"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{env=~\"$env\", status_code=~\"5..\"}[5m])) / sum(rate(http_requests_total{env=~\"$env\"}[5m]))",
+          "legendFormat": "5xx rate"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "custom": { "spanNulls": true }
+        }
+      }
+    },
+    {
+      "title": "Job Queue Depth",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "job_queue_depth{env=~\"$env\", status=\"pending\"}",
+          "legendFormat": "pending {{ job_type }}"
+        },
+        {
+          "expr": "job_queue_depth{env=~\"$env\", status=\"running\"}",
+          "legendFormat": "running {{ job_type }}"
+        },
+        {
+          "expr": "job_queue_depth{env=~\"$env\", status=\"failed\"}",
+          "legendFormat": "failed {{ job_type }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "min": 0, "custom": { "spanNulls": true } }
+      }
+    },
+    {
+      "title": "Job Duration P99",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 16 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(job_duration_seconds_bucket{env=~\"$env\", job_type=~\"$job_type\"}[5m])) by (le, job_type))",
+          "legendFormat": "{{ job_type }}",
+          "intervalFactor": 2
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "custom": { "spanNulls": true }
+        }
+      }
+    },
+    {
+      "title": "Job Success Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "expr": "sum(rate(job_attempts_total{env=~\"$env\", outcome=\"success\"}[5m])) / sum(rate(job_attempts_total{env=~\"$env\"}[5m]))",
+          "legendFormat": "success rate"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "custom": { "spanNulls": true }
+        }
+      }
+    },
+    {
+      "title": "External Call Latency P99",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 16 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(external_call_duration_seconds_bucket{env=~\"$env\"}[5m])) by (le, service))",
+          "legendFormat": "{{ service }}",
+          "intervalFactor": 2
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "custom": { "spanNulls": true }
+        }
+      }
+    },
+    {
+      "title": "OTP Send Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 4, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "expr": "rate(otp_send_total{env=~\"$env\"}[5m])",
+          "legendFormat": "{{ outcome }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "min": 0, "custom": { "spanNulls": true } }
+      }
+    },
+    {
+      "title": "Payment Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 4, "x": 4, "y": 24 },
+      "targets": [
+        {
+          "expr": "rate(payment_total{env=~\"$env\"}[5m])",
+          "legendFormat": "{{ status }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "min": 0, "custom": { "spanNulls": true } }
+      }
+    },
+    {
+      "title": "Enrollment Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 4, "x": 8, "y": 24 },
+      "targets": [
+        {
+          "expr": "rate(enrollment_total{env=~\"$env\"}[5m])",
+          "legendFormat": "{{ status }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "min": 0, "custom": { "spanNulls": true } }
+      }
+    },
+    {
+      "title": "Active Sessions",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 4, "x": 12, "y": 24 },
+      "targets": [
+        {
+          "expr": "session_active_count{env=~\"$env\"}",
+          "legendFormat": "sessions"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "min": 0, "custom": { "spanNulls": true } }
+      }
+    },
+    {
+      "title": "Uptime",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 2, "x": 16, "y": 24 },
+      "targets": [
+        {
+          "expr": "time() - process_start_time_seconds{env=~\"$env\"}",
+          "legendFormat": "uptime"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      },
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "values": false },
+        "textMode": "auto"
+      }
+    },
+    {
+      "title": "Memory Usage",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 3, "x": 18, "y": 24 },
+      "targets": [
+        {
+          "expr": "process_resident_memory_bytes{env=~\"$env\"}",
+          "legendFormat": "RSS"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0,
+          "max": 1073741824,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 524288000 },
+              { "color": "red", "value": 838860800 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "CPU Usage",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 3, "x": 21, "y": 24 },
+      "targets": [
+        {
+          "expr": "rate(process_cpu_seconds_total{env=~\"$env\"}[1m])",
+          "legendFormat": "CPU"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.8 },
+              { "color": "red", "value": 0.95 }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

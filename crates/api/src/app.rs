@@ -25,7 +25,9 @@ pub fn build_app(state: Option<Arc<AppState>>) -> Router {
 
     if let Some(state) = state {
         router = router
+            .nest("/metrics", routes::metrics::router())
             .nest("/api/v1/health", routes::health::readiness_router())
+            .nest("/api/v1/health", routes::health::dashboard_router())
             .nest("/api/v1/auth", routes::auth::router())
             .nest("/api/v1/users", routes::user::router())
             .nest("/api/v1/categories", routes::category::router())

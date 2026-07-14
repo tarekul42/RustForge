@@ -14,6 +14,10 @@ const ARGON2_PARALLELISM: u32 = 1;
 ///
 /// This function performs CPU-intensive work and should be called
 /// via `tokio::task::spawn_blocking` to avoid blocking the async runtime.
+///
+/// # Errors
+///
+/// Returns an error if the argon2 parameters are invalid or hashing fails.
 pub fn hash_password(password: &str) -> Result<String, argon2::password_hash::Error> {
     let salt = SaltString::generate(&mut ArgonOsRng);
     let params = Params::new(ARGON2_MEMORY, ARGON2_ITERATIONS, ARGON2_PARALLELISM, None)?;
@@ -25,6 +29,10 @@ pub fn hash_password(password: &str) -> Result<String, argon2::password_hash::Er
 }
 
 /// Verify a password against a PHC-formatted argon2id hash string.
+///
+/// # Errors
+///
+/// Returns an error if the hash string is malformed.
 pub fn verify_password(password: &str, hash: &str) -> Result<bool, argon2::password_hash::Error> {
     let parsed_hash = PasswordHash::new(hash)?;
 
@@ -41,6 +49,7 @@ pub fn verify_password(password: &str, hash: &str) -> Result<bool, argon2::passw
 /// Hash a session/OTP token using SHA-256 and return the hex-encoded digest.
 ///
 /// Tokens are hashed before storage so the original value is never persisted.
+#[must_use]
 pub fn hash_token(token: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(token.as_bytes());
@@ -48,6 +57,7 @@ pub fn hash_token(token: &str) -> String {
 }
 
 /// Generate cryptographically-secure random bytes.
+#[must_use]
 pub fn generate_random_bytes(count: usize) -> Vec<u8> {
     let mut buf = vec![0u8; count];
     rand::fill(&mut buf[..]);

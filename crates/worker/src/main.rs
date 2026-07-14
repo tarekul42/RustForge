@@ -1,4 +1,13 @@
 #![deny(missing_docs)]
+#![allow(
+    clippy::cast_precision_loss,
+    clippy::doc_markdown,
+    clippy::if_not_else,
+    clippy::map_unwrap_or,
+    clippy::missing_panics_doc,
+    clippy::needless_raw_string_hashes,
+    clippy::ref_option
+)]
 #![doc = "Worker crate: background job runner for async tasks (email, PDF, cleanup)."]
 
 mod handlers;

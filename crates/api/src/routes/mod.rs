@@ -8,6 +8,8 @@ pub mod contact;
 pub mod enrollment;
 /// Health-check endpoints.
 pub mod health;
+/// Prometheus metrics endpoint (API-key protected).
+pub mod metrics;
 /// Payment endpoints.
 pub mod payment;
 /// Review endpoints.

@@ -1,0 +1,40 @@
+# Git
+.git/
+.gitignore
+.github/
+
+# Build artifacts
+target/
+*.sqlx
+
+# Environment
+.env
+.env.example
+
+# Documentation & blueprints
+IMPLEMENTATION_BLUEPRINT.md
+MASTER_BOOTSTRAP_PROMPT.md
+AGENT.md
+Rust_Curriculum/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Dev files
+check_*.txt
+test_*.rs
+benchmarks/
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Node (irrelevant)
+node_modules/
+
+# Temp
+/tmp
