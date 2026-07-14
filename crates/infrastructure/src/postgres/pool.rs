@@ -1,5 +1,5 @@
-use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
+use sqlx::postgres::PgPoolOptions;
 use sw_shared::config::DatabaseConfig;
 
 /// Create a `PgPool` from the application database configuration.

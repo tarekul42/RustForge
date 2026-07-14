@@ -2,8 +2,8 @@ use crate::error::ApplicationError;
 use sw_domain::aggregates::contact::Contact;
 use sw_domain::events::{DomainEvent, EventStore};
 use sw_domain::repositories::contact::ContactRepository;
-use sw_domain::value_objects::ids::ContactId;
 use sw_domain::value_objects::Email;
+use sw_domain::value_objects::ids::ContactId;
 use tracing::instrument;
 
 /// Input for submitting a contact form.

@@ -54,12 +54,12 @@ pub struct EnrollmentService<
 }
 
 impl<
-        ER: EnrollmentRepository,
-        PR: PaymentRepository,
-        WR: WorkshopRepository,
-        ES: EventStore,
-        PG: PaymentGateway,
-    > EnrollmentService<ER, PR, WR, ES, PG>
+    ER: EnrollmentRepository,
+    PR: PaymentRepository,
+    WR: WorkshopRepository,
+    ES: EventStore,
+    PG: PaymentGateway,
+> EnrollmentService<ER, PR, WR, ES, PG>
 {
     /// Create a new `EnrollmentService`.
     pub fn new(

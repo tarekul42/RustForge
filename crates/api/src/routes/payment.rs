@@ -1,7 +1,7 @@
 use axum::{
+    Json, Router,
     extract::{Form, Path, Query, State},
     routing::{get, post},
-    Json, Router,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

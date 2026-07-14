@@ -2,9 +2,9 @@
 pub mod levels;
 
 use axum::{
+    Json, Router,
     extract::{Path, State},
     routing::{delete, get, patch, post},
-    Json, Router,
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;

@@ -267,13 +267,19 @@ mod tests {
     fn approve_returns_moderated_event() {
         let mut review = make_review();
         let event = review.approve().unwrap();
-        assert!(matches!(event, DomainEvent::ReviewModerated { to: "approved", .. }));
+        assert!(matches!(
+            event,
+            DomainEvent::ReviewModerated { to: "approved", .. }
+        ));
     }
 
     #[test]
     fn reject_returns_moderated_event() {
         let mut review = make_review();
         let event = review.reject().unwrap();
-        assert!(matches!(event, DomainEvent::ReviewModerated { to: "rejected", .. }));
+        assert!(matches!(
+            event,
+            DomainEvent::ReviewModerated { to: "rejected", .. }
+        ));
     }
 }

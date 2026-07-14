@@ -1,6 +1,6 @@
 use printpdf::*;
-use sw_domain::value_objects::ids::PaymentId;
 use sw_domain::value_objects::Money;
+use sw_domain::value_objects::ids::PaymentId;
 
 /// Invoice data required for PDF generation.
 pub struct InvoiceData {

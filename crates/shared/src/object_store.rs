@@ -63,7 +63,10 @@ mod tests {
     #[test]
     fn presign_failed_display() {
         let err = ObjectStoreError::PresignFailed("expired key".into());
-        assert_eq!(err.to_string(), "Presigned URL generation failed: expired key");
+        assert_eq!(
+            err.to_string(),
+            "Presigned URL generation failed: expired key"
+        );
     }
 
     #[test]

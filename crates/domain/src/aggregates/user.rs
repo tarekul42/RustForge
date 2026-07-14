@@ -1,6 +1,6 @@
 use crate::events::DomainEvent;
-use crate::value_objects::ids::UserId;
 use crate::value_objects::Email;
+use crate::value_objects::ids::UserId;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -352,7 +352,12 @@ mod tests {
 
     #[test]
     fn role_as_str_and_from_str_round_trip() {
-        for role in &[UserRole::SuperAdmin, UserRole::Admin, UserRole::Instructor, UserRole::Student] {
+        for role in &[
+            UserRole::SuperAdmin,
+            UserRole::Admin,
+            UserRole::Instructor,
+            UserRole::Student,
+        ] {
             let s = role.as_str();
             assert_eq!(UserRole::from_str(s), Some(*role));
         }
@@ -360,7 +365,11 @@ mod tests {
 
     #[test]
     fn status_as_str_and_from_str_round_trip() {
-        for status in &[UserStatus::Active, UserStatus::Inactive, UserStatus::Blocked] {
+        for status in &[
+            UserStatus::Active,
+            UserStatus::Inactive,
+            UserStatus::Blocked,
+        ] {
             let s = status.as_str();
             assert_eq!(UserStatus::from_str(s), Some(*status));
         }

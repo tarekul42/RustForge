@@ -1,6 +1,6 @@
 use crate::config::ObservabilityConfig;
 use tracing_subscriber::{
-    filter::EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt, Registry,
+    Registry, filter::EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt,
 };
 
 /// Initialize the tracing subscriber for structured logging.

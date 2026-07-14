@@ -8,11 +8,12 @@ use sw_application::services::level::LevelService;
 use sw_application::services::review::{CreateReviewInput, ReviewService, UpdateReviewInput};
 use sw_application::services::stats::StatsService;
 use sw_application::services::user::{UpdateUserInput, UserAdminService};
-use sw_application::services::workshop::{CreateWorkshopInput, UpdateWorkshopInput, WorkshopService};
+use sw_application::services::workshop::{
+    CreateWorkshopInput, UpdateWorkshopInput, WorkshopService,
+};
 use sw_domain::aggregates::category::Category;
 use sw_domain::aggregates::contact::Contact;
 use sw_domain::aggregates::review::{Review, ReviewStatus};
-use sw_domain::repositories::stats::{PlatformStats, StatsRepository};
 use sw_domain::aggregates::user::{User, UserRole, UserStatus};
 use sw_domain::aggregates::workshop::Workshop;
 use sw_domain::error::DomainError;
@@ -24,11 +25,12 @@ use sw_domain::repositories::level::LevelRepository;
 use sw_domain::repositories::otp::OtpRepository;
 use sw_domain::repositories::review::ReviewRepository;
 use sw_domain::repositories::session::SessionRepository;
+use sw_domain::repositories::stats::{PlatformStats, StatsRepository};
 use sw_domain::repositories::user::UserRepository;
 use sw_domain::repositories::workshop::WorkshopRepository;
-use sw_domain::value_objects::ids::*;
 use sw_domain::value_objects::Email;
 use sw_domain::value_objects::ids::JobId;
+use sw_domain::value_objects::ids::*;
 
 // ---------------------------------------------------------------------------
 // Shared mock helpers
@@ -110,7 +112,13 @@ impl UserRepository for MockUserRepo {
     }
 
     async fn find_by_id(&self, id: UserId) -> Result<Option<User>, DomainError> {
-        Ok(self.users.lock().unwrap().iter().find(|u| u.id == id).cloned())
+        Ok(self
+            .users
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|u| u.id == id)
+            .cloned())
     }
 
     async fn find_by_email(&self, email: &str) -> Result<Option<User>, DomainError> {
@@ -157,8 +165,7 @@ impl SessionRepository for MockSessionRepo {
     async fn find_by_token_hash(
         &self,
         _token_hash: &str,
-    ) -> Result<Option<(SessionId, UserId, chrono::DateTime<chrono::Utc>)>, DomainError>
-    {
+    ) -> Result<Option<(SessionId, UserId, chrono::DateTime<chrono::Utc>)>, DomainError> {
         Ok(None)
     }
 
@@ -215,7 +222,11 @@ impl OtpRepository for MockOtpRepo {
         if hash.is_empty() {
             Ok(None)
         } else {
-            Ok(Some((hash, attempts, chrono::Utc::now() + chrono::Duration::minutes(10))))
+            Ok(Some((
+                hash,
+                attempts,
+                chrono::Utc::now() + chrono::Duration::minutes(10),
+            )))
         }
     }
 
@@ -259,11 +270,23 @@ impl CategoryRepository for MockCategoryRepo {
     }
 
     async fn find_by_id(&self, id: CategoryId) -> Result<Option<Category>, DomainError> {
-        Ok(self.categories.lock().unwrap().iter().find(|c| c.id == id).cloned())
+        Ok(self
+            .categories
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|c| c.id == id)
+            .cloned())
     }
 
     async fn find_by_slug(&self, slug: &str) -> Result<Option<Category>, DomainError> {
-        Ok(self.categories.lock().unwrap().iter().find(|c| c.slug == slug).cloned())
+        Ok(self
+            .categories
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|c| c.slug == slug)
+            .cloned())
     }
 
     async fn find_all(&self) -> Result<Vec<Category>, DomainError> {
@@ -287,19 +310,30 @@ struct MockLevelRepo;
 
 #[async_trait::async_trait]
 impl LevelRepository for MockLevelRepo {
-    async fn create(&self, _level: &sw_domain::aggregates::level::Level) -> Result<(), DomainError> {
+    async fn create(
+        &self,
+        _level: &sw_domain::aggregates::level::Level,
+    ) -> Result<(), DomainError> {
         Ok(())
     }
 
-    async fn find_by_id(&self, _id: LevelId) -> Result<Option<sw_domain::aggregates::level::Level>, DomainError> {
-        Ok(Some(sw_domain::aggregates::level::Level::new("Beginner".into()).0))
+    async fn find_by_id(
+        &self,
+        _id: LevelId,
+    ) -> Result<Option<sw_domain::aggregates::level::Level>, DomainError> {
+        Ok(Some(
+            sw_domain::aggregates::level::Level::new("Beginner".into()).0,
+        ))
     }
 
     async fn find_all(&self) -> Result<Vec<sw_domain::aggregates::level::Level>, DomainError> {
         Ok(vec![])
     }
 
-    async fn update(&self, _level: &sw_domain::aggregates::level::Level) -> Result<(), DomainError> {
+    async fn update(
+        &self,
+        _level: &sw_domain::aggregates::level::Level,
+    ) -> Result<(), DomainError> {
         Ok(())
     }
 
@@ -332,7 +366,13 @@ impl ReviewRepository for MockReviewRepo {
     }
 
     async fn find_by_id(&self, id: ReviewId) -> Result<Option<Review>, DomainError> {
-        Ok(self.reviews.lock().unwrap().iter().find(|r| r.id == id).cloned())
+        Ok(self
+            .reviews
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|r| r.id == id)
+            .cloned())
     }
 
     async fn find_by_user_and_workshop(
@@ -377,15 +417,24 @@ struct MockEnrollmentRepoEmpty;
 
 #[async_trait::async_trait]
 impl EnrollmentRepository for MockEnrollmentRepoEmpty {
-    async fn create(&self, _e: &sw_domain::aggregates::enrollment::Enrollment) -> Result<(), DomainError> {
+    async fn create(
+        &self,
+        _e: &sw_domain::aggregates::enrollment::Enrollment,
+    ) -> Result<(), DomainError> {
         Ok(())
     }
 
-    async fn find_by_id(&self, _id: EnrollmentId) -> Result<Option<sw_domain::aggregates::enrollment::Enrollment>, DomainError> {
+    async fn find_by_id(
+        &self,
+        _id: EnrollmentId,
+    ) -> Result<Option<sw_domain::aggregates::enrollment::Enrollment>, DomainError> {
         Ok(None)
     }
 
-    async fn find_by_user(&self, _user_id: UserId) -> Result<Vec<sw_domain::aggregates::enrollment::Enrollment>, DomainError> {
+    async fn find_by_user(
+        &self,
+        _user_id: UserId,
+    ) -> Result<Vec<sw_domain::aggregates::enrollment::Enrollment>, DomainError> {
         Ok(vec![])
     }
 
@@ -406,15 +455,26 @@ impl EnrollmentRepository for MockEnrollmentRepoEmpty {
         }])
     }
 
-    async fn update_status_cas(&self, _id: EnrollmentId, _from: &str, _to: &str) -> Result<bool, DomainError> {
+    async fn update_status_cas(
+        &self,
+        _id: EnrollmentId,
+        _from: &str,
+        _to: &str,
+    ) -> Result<bool, DomainError> {
         Ok(true)
     }
 
-    async fn count_active_for_workshop(&self, _workshop_id: WorkshopId) -> Result<i64, DomainError> {
+    async fn count_active_for_workshop(
+        &self,
+        _workshop_id: WorkshopId,
+    ) -> Result<i64, DomainError> {
         Ok(0)
     }
 
-    async fn update(&self, _e: &sw_domain::aggregates::enrollment::Enrollment) -> Result<(), DomainError> {
+    async fn update(
+        &self,
+        _e: &sw_domain::aggregates::enrollment::Enrollment,
+    ) -> Result<(), DomainError> {
         Ok(())
     }
 
@@ -469,8 +529,14 @@ async fn auth_register_success() {
     let user_repo = MockUserRepo::new();
     let service = AuthService::new(user_repo, MockSessionRepo, MockOtpRepo::new(), MockJobRepo);
 
-    let result = service.register("new@test.com", "password123", Some("Alice")).await;
-    assert!(result.is_ok(), "register should succeed: {:?}", result.err());
+    let result = service
+        .register("new@test.com", "password123", Some("Alice"))
+        .await;
+    assert!(
+        result.is_ok(),
+        "register should succeed: {:?}",
+        result.err()
+    );
     let auth = result.unwrap();
     assert_eq!(auth.user.email.as_str(), "new@test.com");
     assert_eq!(auth.user.name, "Alice");
@@ -493,7 +559,10 @@ async fn auth_register_invalid_email_fails() {
 
     let result = service.register("not-an-email", "password123", None).await;
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), ApplicationError::Validation(_)));
+    assert!(matches!(
+        result.unwrap_err(),
+        ApplicationError::Validation(_)
+    ));
 }
 
 #[tokio::test]
@@ -532,7 +601,9 @@ async fn auth_update_profile_success() {
     let user_repo = MockUserRepo::with_users(vec![user]);
     let service = AuthService::new(user_repo, MockSessionRepo, MockOtpRepo::new(), MockJobRepo);
 
-    let result = service.update_profile(user_id, Some("New Name"), Some("https://pic.url")).await;
+    let result = service
+        .update_profile(user_id, Some("New Name"), Some("https://pic.url"))
+        .await;
     assert!(result.is_ok());
     let updated = result.unwrap();
     assert_eq!(updated.name, "New Name");
@@ -544,7 +615,9 @@ async fn auth_update_profile_not_found_fails() {
     let user_repo = MockUserRepo::new();
     let service = AuthService::new(user_repo, MockSessionRepo, MockOtpRepo::new(), MockJobRepo);
 
-    let result = service.update_profile(UserId::new(), Some("Name"), None).await;
+    let result = service
+        .update_profile(UserId::new(), Some("Name"), None)
+        .await;
     assert!(result.is_err());
     assert!(matches!(result.unwrap_err(), ApplicationError::NotFound(_)));
 }
@@ -583,12 +656,23 @@ async fn otp_verify_success() {
     let otp_repo = MockOtpRepo::new();
     let code = "123456";
     let code_hash = sw_shared::crypto::hash_token(code);
-    otp_repo.create("verify@test.com", &code_hash, &(chrono::Utc::now() + chrono::Duration::minutes(10))).await.unwrap();
+    otp_repo
+        .create(
+            "verify@test.com",
+            &code_hash,
+            &(chrono::Utc::now() + chrono::Duration::minutes(10)),
+        )
+        .await
+        .unwrap();
 
     let service = AuthService::new(user_repo, MockSessionRepo, otp_repo, MockJobRepo);
 
     let result = service.verify_otp("verify@test.com", code).await;
-    assert!(result.is_ok(), "verify_otp should succeed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "verify_otp should succeed: {:?}",
+        result.err()
+    );
 
     let user = service.get_user(user_id).await.unwrap();
     assert!(user.is_verified);
@@ -601,7 +685,14 @@ async fn otp_verify_wrong_code_fails() {
 
     let otp_repo = MockOtpRepo::new();
     let code_hash = sw_shared::crypto::hash_token("correct-code");
-    otp_repo.create("wrong-otp@test.com", &code_hash, &(chrono::Utc::now() + chrono::Duration::minutes(10))).await.unwrap();
+    otp_repo
+        .create(
+            "wrong-otp@test.com",
+            &code_hash,
+            &(chrono::Utc::now() + chrono::Duration::minutes(10)),
+        )
+        .await
+        .unwrap();
 
     let service = AuthService::new(user_repo, MockSessionRepo, otp_repo, MockJobRepo);
 
@@ -616,7 +707,14 @@ async fn otp_verify_too_many_attempts_fails() {
 
     let otp_repo = MockOtpRepo::new();
     let code_hash = sw_shared::crypto::hash_token("secret");
-    otp_repo.create("locked@test.com", &code_hash, &(chrono::Utc::now() + chrono::Duration::minutes(10))).await.unwrap();
+    otp_repo
+        .create(
+            "locked@test.com",
+            &code_hash,
+            &(chrono::Utc::now() + chrono::Duration::minutes(10)),
+        )
+        .await
+        .unwrap();
 
     for _ in 0..5 {
         let _ = otp_repo.increment_attempts("locked@test.com").await;
@@ -636,7 +734,9 @@ async fn otp_verify_too_many_attempts_fails() {
 async fn workshop_create_success() {
     let workshop_repo = MockWorkshopRepoEmpty;
     let cat_repo = MockCategoryRepo::new();
-    let _ = cat_repo.create(&Category::new("Rust".into(), "rust".into(), None, None).0).await;
+    let _ = cat_repo
+        .create(&Category::new("Rust".into(), "rust".into(), None, None).0)
+        .await;
     let cat_list = CategoryRepository::find_all(&cat_repo).await.unwrap();
     let category_id = cat_list[0].id;
 
@@ -667,7 +767,12 @@ async fn workshop_create_success() {
 #[tokio::test]
 async fn workshop_get_not_found_fails() {
     let workshop_repo = MockWorkshopRepoEmpty;
-    let service = WorkshopService::new(workshop_repo, MockCategoryRepo::new(), MockLevelRepo, MockEventStore);
+    let service = WorkshopService::new(
+        workshop_repo,
+        MockCategoryRepo::new(),
+        MockLevelRepo,
+        MockEventStore,
+    );
 
     let result = service.get_by_id(WorkshopId::new()).await;
     assert!(result.is_err());
@@ -679,7 +784,8 @@ async fn workshop_update_partial() {
     let (_wid, workshop) = make_workshop();
     let workshop_id = workshop.id;
     let repo = MockWorkshopRepoWithOne::new(workshop);
-    let service = WorkshopService::new(repo, MockCategoryRepo::new(), MockLevelRepo, MockEventStore);
+    let service =
+        WorkshopService::new(repo, MockCategoryRepo::new(), MockLevelRepo, MockEventStore);
 
     let input = UpdateWorkshopInput {
         id: workshop_id,
@@ -707,7 +813,8 @@ async fn workshop_delete_success() {
     let (_wid, workshop) = make_workshop();
     let workshop_id = workshop.id;
     let repo = MockWorkshopRepoWithOne::new(workshop);
-    let service = WorkshopService::new(repo, MockCategoryRepo::new(), MockLevelRepo, MockEventStore);
+    let service =
+        WorkshopService::new(repo, MockCategoryRepo::new(), MockLevelRepo, MockEventStore);
 
     let result = service.delete(workshop_id).await;
     assert!(result.is_ok());
@@ -715,7 +822,12 @@ async fn workshop_delete_success() {
 
 #[tokio::test]
 async fn workshop_delete_not_found_fails() {
-    let service = WorkshopService::new(MockWorkshopRepoEmpty, MockCategoryRepo::new(), MockLevelRepo, MockEventStore);
+    let service = WorkshopService::new(
+        MockWorkshopRepoEmpty,
+        MockCategoryRepo::new(),
+        MockLevelRepo,
+        MockEventStore,
+    );
 
     let result = service.delete(WorkshopId::new()).await;
     assert!(result.is_err());
@@ -729,7 +841,9 @@ async fn workshop_delete_not_found_fails() {
 async fn category_create_success() {
     let service = CategoryService::new(MockCategoryRepo::new(), MockEventStore);
 
-    let result = service.create("Rust".into(), "rust".into(), None, None).await;
+    let result = service
+        .create("Rust".into(), "rust".into(), None, None)
+        .await;
     assert!(result.is_ok());
     let cat = result.unwrap();
     assert_eq!(cat.name, "Rust");
@@ -741,8 +855,13 @@ async fn category_create_duplicate_slug_fails() {
     let repo = MockCategoryRepo::new();
     let service = CategoryService::new(repo, MockEventStore);
 
-    let _ = service.create("Rust".into(), "rust".into(), None, None).await.unwrap();
-    let result = service.create("Rust Again".into(), "rust".into(), None, None).await;
+    let _ = service
+        .create("Rust".into(), "rust".into(), None, None)
+        .await
+        .unwrap();
+    let result = service
+        .create("Rust Again".into(), "rust".into(), None, None)
+        .await;
     assert!(result.is_err());
     assert!(matches!(result.unwrap_err(), ApplicationError::Conflict(_)));
 }
@@ -764,7 +883,12 @@ async fn review_create_success() {
     let (_wid, workshop) = make_workshop();
     let workshop_id = workshop.id;
     let workshop_repo = MockWorkshopRepoWithOne::new(workshop);
-    let service = ReviewService::new(review_repo, MockEnrollmentRepoEmpty, workshop_repo, MockEventStore);
+    let service = ReviewService::new(
+        review_repo,
+        MockEnrollmentRepoEmpty,
+        workshop_repo,
+        MockEventStore,
+    );
 
     let input = CreateReviewInput {
         user_id: UserId::new(),
@@ -786,7 +910,12 @@ async fn review_create_invalid_rating_fails() {
     let (_wid, workshop) = make_workshop();
     let workshop_id = workshop.id;
     let review_repo = MockReviewRepo::new();
-    let service = ReviewService::new(review_repo, MockEnrollmentRepoEmpty, MockWorkshopRepoWithOne::new(workshop), MockEventStore);
+    let service = ReviewService::new(
+        review_repo,
+        MockEnrollmentRepoEmpty,
+        MockWorkshopRepoWithOne::new(workshop),
+        MockEventStore,
+    );
 
     let input = CreateReviewInput {
         user_id: UserId::new(),
@@ -803,11 +932,23 @@ async fn review_create_invalid_rating_fails() {
 #[tokio::test]
 async fn review_approve_success() {
     let review_repo = MockReviewRepo::new();
-    let (review, _) = Review::new(UserId::new(), WorkshopId::new(), 4, "Nice".into(), "Content".into()).unwrap();
+    let (review, _) = Review::new(
+        UserId::new(),
+        WorkshopId::new(),
+        4,
+        "Nice".into(),
+        "Content".into(),
+    )
+    .unwrap();
     let review_id = review.id;
     review_repo.reviews.lock().unwrap().push(review);
 
-    let service = ReviewService::new(review_repo, MockEnrollmentRepoEmpty, MockWorkshopRepoEmpty, MockEventStore);
+    let service = ReviewService::new(
+        review_repo,
+        MockEnrollmentRepoEmpty,
+        MockWorkshopRepoEmpty,
+        MockEventStore,
+    );
 
     let result = service.approve(review_id).await;
     assert!(result.is_ok());
@@ -817,11 +958,23 @@ async fn review_approve_success() {
 #[tokio::test]
 async fn review_reject_success() {
     let review_repo = MockReviewRepo::new();
-    let (review, _) = Review::new(UserId::new(), WorkshopId::new(), 3, "Meh".into(), "OK".into()).unwrap();
+    let (review, _) = Review::new(
+        UserId::new(),
+        WorkshopId::new(),
+        3,
+        "Meh".into(),
+        "OK".into(),
+    )
+    .unwrap();
     let review_id = review.id;
     review_repo.reviews.lock().unwrap().push(review);
 
-    let service = ReviewService::new(review_repo, MockEnrollmentRepoEmpty, MockWorkshopRepoEmpty, MockEventStore);
+    let service = ReviewService::new(
+        review_repo,
+        MockEnrollmentRepoEmpty,
+        MockWorkshopRepoEmpty,
+        MockEventStore,
+    );
 
     let result = service.reject(review_id).await;
     assert!(result.is_ok());
@@ -831,11 +984,23 @@ async fn review_reject_success() {
 #[tokio::test]
 async fn review_update_success() {
     let review_repo = MockReviewRepo::new();
-    let (review, _) = Review::new(UserId::new(), WorkshopId::new(), 3, "Orig".into(), "Orig".into()).unwrap();
+    let (review, _) = Review::new(
+        UserId::new(),
+        WorkshopId::new(),
+        3,
+        "Orig".into(),
+        "Orig".into(),
+    )
+    .unwrap();
     let review_id = review.id;
     review_repo.reviews.lock().unwrap().push(review);
 
-    let service = ReviewService::new(review_repo, MockEnrollmentRepoEmpty, MockWorkshopRepoEmpty, MockEventStore);
+    let service = ReviewService::new(
+        review_repo,
+        MockEnrollmentRepoEmpty,
+        MockWorkshopRepoEmpty,
+        MockEventStore,
+    );
 
     let result = service
         .update(UpdateReviewInput {
@@ -854,12 +1019,24 @@ async fn review_update_success() {
 #[tokio::test]
 async fn review_update_after_approve_fails() {
     let review_repo = MockReviewRepo::new();
-    let (mut review, _) = Review::new(UserId::new(), WorkshopId::new(), 4, "Good".into(), "Good".into()).unwrap();
+    let (mut review, _) = Review::new(
+        UserId::new(),
+        WorkshopId::new(),
+        4,
+        "Good".into(),
+        "Good".into(),
+    )
+    .unwrap();
     let _ = review.approve();
     let review_id = review.id;
     review_repo.reviews.lock().unwrap().push(review);
 
-    let service = ReviewService::new(review_repo, MockEnrollmentRepoEmpty, MockWorkshopRepoEmpty, MockEventStore);
+    let service = ReviewService::new(
+        review_repo,
+        MockEnrollmentRepoEmpty,
+        MockWorkshopRepoEmpty,
+        MockEventStore,
+    );
 
     let result = service
         .update(UpdateReviewInput {
@@ -870,12 +1047,20 @@ async fn review_update_after_approve_fails() {
         })
         .await;
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), ApplicationError::Validation(_)));
+    assert!(matches!(
+        result.unwrap_err(),
+        ApplicationError::Validation(_)
+    ));
 }
 
 #[tokio::test]
 async fn review_detail_not_found_fails() {
-    let service = ReviewService::new(MockReviewRepo::new(), MockEnrollmentRepoEmpty, MockWorkshopRepoEmpty, MockEventStore);
+    let service = ReviewService::new(
+        MockReviewRepo::new(),
+        MockEnrollmentRepoEmpty,
+        MockWorkshopRepoEmpty,
+        MockEventStore,
+    );
     let result = service.find_by_id(ReviewId::new()).await;
     assert!(result.is_ok());
     assert!(result.unwrap().is_none());
@@ -887,14 +1072,20 @@ async fn review_find_by_workshop() {
     let workshop_id = WorkshopId::new();
     let (mut r1, _) = Review::new(user_id, workshop_id, 5, "Great".into(), "A+".into()).unwrap();
     let _ = r1.approve();
-    let (mut r2, _) = Review::new(UserId::new(), workshop_id, 2, "Bad".into(), "Meh".into()).unwrap();
+    let (mut r2, _) =
+        Review::new(UserId::new(), workshop_id, 2, "Bad".into(), "Meh".into()).unwrap();
     let _ = r2.approve();
 
     let review_repo = MockReviewRepo::new();
     review_repo.reviews.lock().unwrap().push(r1);
     review_repo.reviews.lock().unwrap().push(r2);
 
-    let service = ReviewService::new(review_repo, MockEnrollmentRepoEmpty, MockWorkshopRepoEmpty, MockEventStore);
+    let service = ReviewService::new(
+        review_repo,
+        MockEnrollmentRepoEmpty,
+        MockWorkshopRepoEmpty,
+        MockEventStore,
+    );
 
     let all = service.find_by_workshop(workshop_id, false).await.unwrap();
     assert_eq!(all.len(), 2);
@@ -906,11 +1097,23 @@ async fn review_find_by_workshop() {
 #[tokio::test]
 async fn review_delete_success() {
     let review_repo = MockReviewRepo::new();
-    let (review, _) = Review::new(UserId::new(), WorkshopId::new(), 4, "Title".into(), "Content".into()).unwrap();
+    let (review, _) = Review::new(
+        UserId::new(),
+        WorkshopId::new(),
+        4,
+        "Title".into(),
+        "Content".into(),
+    )
+    .unwrap();
     let review_id = review.id;
     review_repo.reviews.lock().unwrap().push(review);
 
-    let service = ReviewService::new(review_repo, MockEnrollmentRepoEmpty, MockWorkshopRepoEmpty, MockEventStore);
+    let service = ReviewService::new(
+        review_repo,
+        MockEnrollmentRepoEmpty,
+        MockWorkshopRepoEmpty,
+        MockEventStore,
+    );
     let result = service.delete(review_id).await;
     assert!(result.is_ok());
 }
@@ -936,7 +1139,10 @@ fn app_error_factories() {
     let err = ApplicationError::internal("db crash");
     assert!(err.to_string().contains("db crash"));
 
-    assert_eq!(ApplicationError::RateLimitExceeded.to_string(), "Rate limit exceeded");
+    assert_eq!(
+        ApplicationError::RateLimitExceeded.to_string(),
+        "Rate limit exceeded"
+    );
 }
 
 #[test]
@@ -958,13 +1164,33 @@ struct MockWorkshopRepoEmpty;
 
 #[async_trait::async_trait]
 impl WorkshopRepository for MockWorkshopRepoEmpty {
-    async fn create(&self, _w: &Workshop) -> Result<(), DomainError> { Ok(()) }
-    async fn find_by_id(&self, _id: WorkshopId) -> Result<Option<Workshop>, DomainError> { Ok(None) }
-    async fn find_by_slug(&self, _slug: &str) -> Result<Option<Workshop>, DomainError> { Ok(None) }
-    async fn update(&self, _w: &Workshop) -> Result<(), DomainError> { Ok(()) }
-    async fn delete(&self, _id: WorkshopId) -> Result<(), DomainError> { Ok(()) }
-    async fn get_images(&self, _id: WorkshopId) -> Result<Vec<sw_domain::aggregates::workshop::WorkshopImage>, DomainError> { Ok(vec![]) }
-    async fn add_image(&self, _wid: WorkshopId, _url: &str, _key: &str) -> Result<sw_domain::aggregates::workshop::WorkshopImage, DomainError> {
+    async fn create(&self, _w: &Workshop) -> Result<(), DomainError> {
+        Ok(())
+    }
+    async fn find_by_id(&self, _id: WorkshopId) -> Result<Option<Workshop>, DomainError> {
+        Ok(None)
+    }
+    async fn find_by_slug(&self, _slug: &str) -> Result<Option<Workshop>, DomainError> {
+        Ok(None)
+    }
+    async fn update(&self, _w: &Workshop) -> Result<(), DomainError> {
+        Ok(())
+    }
+    async fn delete(&self, _id: WorkshopId) -> Result<(), DomainError> {
+        Ok(())
+    }
+    async fn get_images(
+        &self,
+        _id: WorkshopId,
+    ) -> Result<Vec<sw_domain::aggregates::workshop::WorkshopImage>, DomainError> {
+        Ok(vec![])
+    }
+    async fn add_image(
+        &self,
+        _wid: WorkshopId,
+        _url: &str,
+        _key: &str,
+    ) -> Result<sw_domain::aggregates::workshop::WorkshopImage, DomainError> {
         Ok(sw_domain::aggregates::workshop::WorkshopImage {
             id: WorkshopImageId::new(),
             workshop_id: _wid,
@@ -973,10 +1199,18 @@ impl WorkshopRepository for MockWorkshopRepoEmpty {
             created_at: chrono::Utc::now(),
         })
     }
-    async fn remove_image(&self, _iid: WorkshopImageId) -> Result<(), DomainError> { Ok(()) }
-    async fn find_all(&self) -> Result<Vec<Workshop>, DomainError> { Ok(vec![]) }
-    async fn reserve_seat_atomic(&self, _wid: WorkshopId) -> Result<Option<Workshop>, DomainError> { Ok(None) }
-    async fn release_seat_atomic(&self, _wid: WorkshopId) -> Result<(), DomainError> { Ok(()) }
+    async fn remove_image(&self, _iid: WorkshopImageId) -> Result<(), DomainError> {
+        Ok(())
+    }
+    async fn find_all(&self) -> Result<Vec<Workshop>, DomainError> {
+        Ok(vec![])
+    }
+    async fn reserve_seat_atomic(&self, _wid: WorkshopId) -> Result<Option<Workshop>, DomainError> {
+        Ok(None)
+    }
+    async fn release_seat_atomic(&self, _wid: WorkshopId) -> Result<(), DomainError> {
+        Ok(())
+    }
 }
 
 struct MockWorkshopRepoWithOne {
@@ -985,21 +1219,41 @@ struct MockWorkshopRepoWithOne {
 
 impl MockWorkshopRepoWithOne {
     fn new(w: Workshop) -> Self {
-        Self { workshop: Mutex::new(Some(w)) }
+        Self {
+            workshop: Mutex::new(Some(w)),
+        }
     }
 }
 
 #[async_trait::async_trait]
 impl WorkshopRepository for MockWorkshopRepoWithOne {
-    async fn create(&self, _w: &Workshop) -> Result<(), DomainError> { Ok(()) }
+    async fn create(&self, _w: &Workshop) -> Result<(), DomainError> {
+        Ok(())
+    }
     async fn find_by_id(&self, id: WorkshopId) -> Result<Option<Workshop>, DomainError> {
         Ok(self.workshop.lock().unwrap().clone().filter(|w| w.id == id))
     }
-    async fn find_by_slug(&self, _slug: &str) -> Result<Option<Workshop>, DomainError> { Ok(self.workshop.lock().unwrap().clone()) }
-    async fn update(&self, _w: &Workshop) -> Result<(), DomainError> { Ok(()) }
-    async fn delete(&self, _id: WorkshopId) -> Result<(), DomainError> { Ok(()) }
-    async fn get_images(&self, _id: WorkshopId) -> Result<Vec<sw_domain::aggregates::workshop::WorkshopImage>, DomainError> { Ok(vec![]) }
-    async fn add_image(&self, _wid: WorkshopId, _url: &str, _key: &str) -> Result<sw_domain::aggregates::workshop::WorkshopImage, DomainError> {
+    async fn find_by_slug(&self, _slug: &str) -> Result<Option<Workshop>, DomainError> {
+        Ok(self.workshop.lock().unwrap().clone())
+    }
+    async fn update(&self, _w: &Workshop) -> Result<(), DomainError> {
+        Ok(())
+    }
+    async fn delete(&self, _id: WorkshopId) -> Result<(), DomainError> {
+        Ok(())
+    }
+    async fn get_images(
+        &self,
+        _id: WorkshopId,
+    ) -> Result<Vec<sw_domain::aggregates::workshop::WorkshopImage>, DomainError> {
+        Ok(vec![])
+    }
+    async fn add_image(
+        &self,
+        _wid: WorkshopId,
+        _url: &str,
+        _key: &str,
+    ) -> Result<sw_domain::aggregates::workshop::WorkshopImage, DomainError> {
         Ok(sw_domain::aggregates::workshop::WorkshopImage {
             id: WorkshopImageId::new(),
             workshop_id: _wid,
@@ -1008,10 +1262,18 @@ impl WorkshopRepository for MockWorkshopRepoWithOne {
             created_at: chrono::Utc::now(),
         })
     }
-    async fn remove_image(&self, _iid: WorkshopImageId) -> Result<(), DomainError> { Ok(()) }
-    async fn find_all(&self) -> Result<Vec<Workshop>, DomainError> { Ok(vec![]) }
-    async fn reserve_seat_atomic(&self, _wid: WorkshopId) -> Result<Option<Workshop>, DomainError> { Ok(self.workshop.lock().unwrap().clone()) }
-    async fn release_seat_atomic(&self, _wid: WorkshopId) -> Result<(), DomainError> { Ok(()) }
+    async fn remove_image(&self, _iid: WorkshopImageId) -> Result<(), DomainError> {
+        Ok(())
+    }
+    async fn find_all(&self) -> Result<Vec<Workshop>, DomainError> {
+        Ok(vec![])
+    }
+    async fn reserve_seat_atomic(&self, _wid: WorkshopId) -> Result<Option<Workshop>, DomainError> {
+        Ok(self.workshop.lock().unwrap().clone())
+    }
+    async fn release_seat_atomic(&self, _wid: WorkshopId) -> Result<(), DomainError> {
+        Ok(())
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -1038,7 +1300,13 @@ impl ContactRepository for MockContactRepo {
     }
 
     async fn find_by_id(&self, id: ContactId) -> Result<Option<Contact>, DomainError> {
-        Ok(self.contacts.lock().unwrap().iter().find(|c| c.id == id).cloned())
+        Ok(self
+            .contacts
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|c| c.id == id)
+            .cloned())
     }
 
     async fn list(&self, _is_read: Option<bool>) -> Result<Vec<Contact>, DomainError> {
@@ -1071,7 +1339,9 @@ impl StatsRepository for MockStatsRepo {
         })
     }
 
-    async fn workshop_ratings(&self) -> Result<Vec<sw_domain::repositories::stats::WorkshopRating>, DomainError> {
+    async fn workshop_ratings(
+        &self,
+    ) -> Result<Vec<sw_domain::repositories::stats::WorkshopRating>, DomainError> {
         Ok(vec![sw_domain::repositories::stats::WorkshopRating {
             workshop_id: WorkshopId::new(),
             average_rating: 4.5,
@@ -1117,7 +1387,10 @@ async fn contact_submit_invalid_email_fails() {
         })
         .await;
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), ApplicationError::Validation(_)));
+    assert!(matches!(
+        result.unwrap_err(),
+        ApplicationError::Validation(_)
+    ));
 }
 
 #[tokio::test]
@@ -1147,7 +1420,9 @@ async fn contact_list() {
     let repo = MockContactRepo::new();
     let email = Email::new("a@b.com").unwrap();
     repo.contacts.lock().unwrap().push(
-        Contact::new("A".into(), email, "S".into(), "M".into()).unwrap().0,
+        Contact::new("A".into(), email, "S".into(), "M".into())
+            .unwrap()
+            .0,
     );
     let service = ContactService::new(repo, MockEventStore);
     let result = service.list(None).await;

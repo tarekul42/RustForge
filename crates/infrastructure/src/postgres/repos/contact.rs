@@ -2,8 +2,8 @@ use sqlx::PgPool;
 use sw_domain::aggregates::contact::Contact;
 use sw_domain::error::DomainError;
 use sw_domain::repositories::contact::ContactRepository;
-use sw_domain::value_objects::ids::ContactId;
 use sw_domain::value_objects::Email;
+use sw_domain::value_objects::ids::ContactId;
 
 /// SQLx-backed implementation of [`ContactRepository`].
 pub struct PostgresContactRepository {

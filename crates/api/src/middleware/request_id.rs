@@ -3,8 +3,8 @@ use axum::http::HeaderValue;
 use axum::middleware::Next;
 use axum::response::Response;
 use std::cell::Cell;
-use tracing::info_span;
 use tracing::Instrument;
+use tracing::info_span;
 use uuid::Uuid;
 
 thread_local! {

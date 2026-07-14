@@ -4,7 +4,7 @@ use crate::middleware::request_id::set_request_id;
 use crate::routes;
 use crate::state::AppState;
 use axum::http::{HeaderValue, Method};
-use axum::{middleware, Router};
+use axum::{Router, middleware};
 use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
 
@@ -29,7 +29,10 @@ pub fn build_app(state: Arc<AppState>) -> Router {
     };
 
     Router::<Arc<AppState>>::new()
-        .nest("/api/v1/health", routes::health::liveness_router().with_state(()))
+        .nest(
+            "/api/v1/health",
+            routes::health::liveness_router().with_state(()),
+        )
         .nest("/metrics", routes::metrics::router())
         .nest("/api/v1/health", routes::health::readiness_router())
         .nest("/api/v1/health", routes::health::dashboard_router())
@@ -46,7 +49,10 @@ pub fn build_app(state: Arc<AppState>) -> Router {
             "/api/v1/workshops/levels",
             routes::workshop::levels::router(),
         )
-        .layer(middleware::from_fn_with_state(state.clone(), origin_check_mw))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            origin_check_mw,
+        ))
         .layer(rate_limiter_layer())
         .with_state(state)
         .layer(middleware::from_fn(set_request_id))

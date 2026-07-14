@@ -1,6 +1,4 @@
-use axum::{
-    extract::State, http::StatusCode, response::IntoResponse, routing::get, Json, Router,
-};
+use axum::{Json, Router, extract::State, http::StatusCode, response::IntoResponse, routing::get};
 use std::sync::Arc;
 
 use crate::middleware::request_id::get_current_request_id;

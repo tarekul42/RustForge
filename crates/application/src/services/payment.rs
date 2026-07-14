@@ -33,14 +33,14 @@ pub struct PaymentService<
 }
 
 impl<
-        PR: PaymentRepository,
-        ER: EnrollmentRepository,
-        ES: EventStore,
-        PG: PaymentGateway,
-        WR: WorkshopRepository,
-        JR: JobRepository,
-        RL: RefundLogRepository,
-    > PaymentService<PR, ER, ES, PG, WR, JR, RL>
+    PR: PaymentRepository,
+    ER: EnrollmentRepository,
+    ES: EventStore,
+    PG: PaymentGateway,
+    WR: WorkshopRepository,
+    JR: JobRepository,
+    RL: RefundLogRepository,
+> PaymentService<PR, ER, ES, PG, WR, JR, RL>
 {
     /// Create a new `PaymentService`.
     pub fn new(

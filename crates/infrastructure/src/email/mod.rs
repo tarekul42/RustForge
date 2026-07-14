@@ -1,6 +1,6 @@
 use lettre::{
-    message::Mailbox, transport::smtp::authentication::Credentials, AsyncSmtpTransport,
-    AsyncTransport, Message, Tokio1Executor,
+    AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor, message::Mailbox,
+    transport::smtp::authentication::Credentials,
 };
 use sw_domain::services::email_sender::{EmailError, EmailSender};
 use sw_shared::config::EmailConfig;

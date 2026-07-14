@@ -2,8 +2,8 @@ use sqlx::PgPool;
 use sw_domain::aggregates::user::{User, UserRole, UserStatus};
 use sw_domain::error::DomainError;
 use sw_domain::repositories::user::UserRepository;
-use sw_domain::value_objects::ids::UserId;
 use sw_domain::value_objects::Email;
+use sw_domain::value_objects::ids::UserId;
 
 /// SQLx-backed implementation of [`UserRepository`].
 pub struct PostgresUserRepository {

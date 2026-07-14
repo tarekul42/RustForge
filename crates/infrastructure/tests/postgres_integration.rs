@@ -21,9 +21,9 @@ use sw_domain::repositories::level::LevelRepository;
 use sw_domain::repositories::payment::PaymentRepository;
 use sw_domain::repositories::user::UserRepository;
 use sw_domain::repositories::workshop::WorkshopRepository;
+use sw_domain::value_objects::Email;
 use sw_domain::value_objects::ids::*;
 use sw_domain::value_objects::money::Money;
-use sw_domain::value_objects::Email;
 use sw_infrastructure::postgres::repos;
 use testcontainers::runners::AsyncRunner;
 use testcontainers_modules::postgres::Postgres;
@@ -111,7 +111,12 @@ fn make_user(email: &str) -> User {
     }
 }
 
-fn make_workshop(slug: &str, category_id: CategoryId, level_id: LevelId, created_by: UserId) -> Workshop {
+fn make_workshop(
+    slug: &str,
+    category_id: CategoryId,
+    level_id: LevelId,
+    created_by: UserId,
+) -> Workshop {
     let (w, _) = Workshop::new(
         format!("Workshop {slug}"),
         slug.into(),
@@ -152,7 +157,10 @@ async fn pg_user_find_by_email() {
         let repo = repos::user::PostgresUserRepository::new(pool);
         let user = make_user("find-email@test.com");
         repo.create(&user).await.expect("insert");
-        let found = repo.find_by_email("find-email@test.com").await.expect("find");
+        let found = repo
+            .find_by_email("find-email@test.com")
+            .await
+            .expect("find");
         assert!(found.is_some());
         assert_eq!(found.unwrap().id, user.id);
     })
@@ -221,7 +229,10 @@ async fn pg_category_create_and_find() {
         let repo = repos::category::PostgresCategoryRepository::new(pool);
         let (cat, _) = Category::new("Rust".into(), "rust".into(), None, None);
         repo.create(&cat).await.expect("create");
-        assert_eq!(repo.find_by_id(cat.id).await.expect("find").unwrap().name, "Rust");
+        assert_eq!(
+            repo.find_by_id(cat.id).await.expect("find").unwrap().name,
+            "Rust"
+        );
     })
     .await
 }
@@ -243,8 +254,12 @@ async fn pg_category_list() {
     with_pool(async {
         let pool = PgPool::connect(&CTX.url).await.unwrap();
         let repo = repos::category::PostgresCategoryRepository::new(pool);
-        repo.create(&Category::new("A".into(), "a".into(), None, None).0).await.unwrap();
-        repo.create(&Category::new("B".into(), "b".into(), None, None).0).await.unwrap();
+        repo.create(&Category::new("A".into(), "a".into(), None, None).0)
+            .await
+            .unwrap();
+        repo.create(&Category::new("B".into(), "b".into(), None, None).0)
+            .await
+            .unwrap();
         assert_eq!(repo.find_all().await.expect("list").len(), 2);
     })
     .await
@@ -275,7 +290,10 @@ async fn pg_workshop_create_and_find() {
         let repo = repos::workshop::PostgresWorkshopRepository::new(pool);
         let w = make_workshop("ws-1", cat_id, level_id, user_id);
         repo.create(&w).await.expect("create");
-        assert_eq!(repo.find_by_id(w.id).await.expect("find").unwrap().slug, "ws-1");
+        assert_eq!(
+            repo.find_by_id(w.id).await.expect("find").unwrap().slug,
+            "ws-1"
+        );
     })
     .await
 }
@@ -288,7 +306,12 @@ async fn pg_workshop_find_by_slug() {
         let repo = repos::workshop::PostgresWorkshopRepository::new(pool);
         let w = make_workshop("slug-test", cat_id, level_id, user_id);
         repo.create(&w).await.unwrap();
-        assert!(repo.find_by_slug("slug-test").await.expect("find").is_some());
+        assert!(
+            repo.find_by_slug("slug-test")
+                .await
+                .expect("find")
+                .is_some()
+        );
     })
     .await
 }
@@ -302,10 +325,25 @@ async fn pg_workshop_seat_reserve_and_release() {
         let mut w = make_workshop("seat", cat_id, level_id, user_id);
         w.max_seats = Some(1);
         repo.create(&w).await.expect("create");
-        assert!(repo.reserve_seat_atomic(w.id).await.expect("reserve1").is_some());
-        assert!(repo.reserve_seat_atomic(w.id).await.expect("reserve2").is_none());
+        assert!(
+            repo.reserve_seat_atomic(w.id)
+                .await
+                .expect("reserve1")
+                .is_some()
+        );
+        assert!(
+            repo.reserve_seat_atomic(w.id)
+                .await
+                .expect("reserve2")
+                .is_none()
+        );
         repo.release_seat_atomic(w.id).await.expect("release");
-        assert!(repo.reserve_seat_atomic(w.id).await.expect("reserve3").is_some());
+        assert!(
+            repo.reserve_seat_atomic(w.id)
+                .await
+                .expect("reserve3")
+                .is_some()
+        );
     })
     .await
 }
@@ -336,18 +374,31 @@ async fn pg_enrollment_and_payment_flow() {
         ws_repo.create(&w).await.unwrap();
 
         let (mut enrollment, _) = Enrollment::new(user.id, w.id, 1);
-        enroll_repo.create(&enrollment).await.expect("create enrollment");
+        enroll_repo
+            .create(&enrollment)
+            .await
+            .expect("create enrollment");
         let (payment, _) = Payment::new(enrollment.id, "TXN-EP".into(), Money::from_cents(5000));
         pay_repo.create(&payment).await.expect("create payment");
         enrollment.payment_id = Some(payment.id);
         enroll_repo.update(&enrollment).await.unwrap();
 
         assert_eq!(
-            enroll_repo.find_by_id(enrollment.id).await.unwrap().unwrap().payment_id,
+            enroll_repo
+                .find_by_id(enrollment.id)
+                .await
+                .unwrap()
+                .unwrap()
+                .payment_id,
             Some(payment.id)
         );
         assert_eq!(
-            pay_repo.find_by_transaction_id("TXN-EP").await.unwrap().unwrap().status,
+            pay_repo
+                .find_by_transaction_id("TXN-EP")
+                .await
+                .unwrap()
+                .unwrap()
+                .status,
             PaymentStatus::Unpaid
         );
     })

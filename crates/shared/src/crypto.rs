@@ -1,5 +1,5 @@
-use argon2::password_hash::rand_core::OsRng as ArgonOsRng;
 use argon2::password_hash::SaltString;
+use argon2::password_hash::rand_core::OsRng as ArgonOsRng;
 use argon2::{Algorithm, Argon2, Params, PasswordHash, PasswordHasher, PasswordVerifier};
 use sha2::{Digest, Sha256};
 

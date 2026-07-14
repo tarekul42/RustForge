@@ -1,6 +1,6 @@
 use crate::events::DomainEvent;
-use crate::value_objects::ids::ContactId;
 use crate::value_objects::Email;
+use crate::value_objects::ids::ContactId;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
