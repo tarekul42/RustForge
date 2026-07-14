@@ -5,7 +5,8 @@
 //!
 //! Requires Docker. Run with: `cargo test --test postgres_integration -- --test-threads=1`
 
-use std::sync::{LazyLock, Mutex};
+use std::sync::LazyLock;
+use tokio::sync::Mutex;
 
 use sqlx::PgPool;
 use sw_domain::aggregates::category::Category;
@@ -72,7 +73,7 @@ async fn with_pool<F, T>(f: F) -> T
 where
     F: std::future::Future<Output = T>,
 {
-    let _guard = DB_LOCK.lock().unwrap();
+    let _guard = DB_LOCK.lock().await;
     // CTX is already initialized by now; just deref to ensure container is alive.
     let url = &CTX.url;
     let pool = PgPool::connect(url).await.expect("connect pool");
