@@ -255,4 +255,124 @@ mod tests {
         let user = make_user();
         assert!(!user.is_admin());
     }
+
+    #[test]
+    fn change_password_updates_hash() {
+        let mut user = make_user();
+        assert!(user.password_hash.is_none());
+        let event = user.change_password("new_hash".to_string()).unwrap();
+        assert_eq!(user.password_hash.as_deref(), Some("new_hash"));
+        assert!(matches!(event, DomainEvent::PasswordChanged { .. }));
+    }
+
+    #[test]
+    fn change_password_to_same_hash_works() {
+        let mut user = make_user();
+        user.change_password("hash".to_string()).unwrap();
+        user.change_password("hash".to_string()).unwrap();
+        assert_eq!(user.password_hash.as_deref(), Some("hash"));
+    }
+
+    #[test]
+    fn update_profile_changes_name() {
+        let mut user = make_user();
+        user.update_profile(Some("New Name".to_string()), None, None, None, None, None);
+        assert_eq!(user.name, "New Name");
+    }
+
+    #[test]
+    fn update_profile_with_none_keeps_name() {
+        let mut user = make_user();
+        let original = user.name.clone();
+        user.update_profile(None, None, None, None, None, None);
+        assert_eq!(user.name, original);
+    }
+
+    #[test]
+    fn update_profile_changes_all_fields() {
+        let mut user = make_user();
+        let event = user.update_profile(
+            Some("New".to_string()),
+            Some("555".to_string()),
+            Some(30),
+            Some("Addr".to_string()),
+            Some("Expert".to_string()),
+            Some("Bio".to_string()),
+        );
+        assert_eq!(user.name, "New");
+        assert_eq!(user.phone.as_deref(), Some("555"));
+        assert_eq!(user.age, Some(30));
+        assert_eq!(user.address.as_deref(), Some("Addr"));
+        assert_eq!(user.expertise.as_deref(), Some("Expert"));
+        assert_eq!(user.bio.as_deref(), Some("Bio"));
+        assert!(matches!(event, DomainEvent::UserUpdated { .. }));
+    }
+
+    #[test]
+    fn is_admin_true_for_admin() {
+        let mut user = make_user();
+        user.role = UserRole::Admin;
+        assert!(user.is_admin());
+    }
+
+    #[test]
+    fn is_admin_true_for_super_admin() {
+        let mut user = make_user();
+        user.role = UserRole::SuperAdmin;
+        assert!(user.is_admin());
+    }
+
+    #[test]
+    fn is_super_admin_false_for_admin() {
+        let mut user = make_user();
+        user.role = UserRole::Admin;
+        assert!(!user.is_super_admin());
+    }
+
+    #[test]
+    fn is_super_admin_true_for_super_admin() {
+        let mut user = make_user();
+        user.role = UserRole::SuperAdmin;
+        assert!(user.is_super_admin());
+    }
+
+    #[test]
+    fn can_manage_workshops_true_for_instructor() {
+        let mut user = make_user();
+        user.role = UserRole::Instructor;
+        assert!(user.can_manage_workshops());
+    }
+
+    #[test]
+    fn can_manage_workshops_false_for_student() {
+        let user = make_user();
+        assert_eq!(user.role, UserRole::Student);
+        assert!(!user.can_manage_workshops());
+    }
+
+    #[test]
+    fn role_as_str_and_from_str_round_trip() {
+        for role in &[UserRole::SuperAdmin, UserRole::Admin, UserRole::Instructor, UserRole::Student] {
+            let s = role.as_str();
+            assert_eq!(UserRole::from_str(s), Some(*role));
+        }
+    }
+
+    #[test]
+    fn status_as_str_and_from_str_round_trip() {
+        for status in &[UserStatus::Active, UserStatus::Inactive, UserStatus::Blocked] {
+            let s = status.as_str();
+            assert_eq!(UserStatus::from_str(s), Some(*status));
+        }
+    }
+
+    #[test]
+    fn role_from_str_invalid_returns_none() {
+        assert_eq!(UserRole::from_str("unknown"), None);
+    }
+
+    #[test]
+    fn status_from_str_invalid_returns_none() {
+        assert_eq!(UserStatus::from_str("unknown"), None);
+    }
 }

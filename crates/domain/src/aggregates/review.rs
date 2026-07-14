@@ -218,4 +218,62 @@ mod tests {
         );
         assert!(result.is_err());
     }
+
+    #[test]
+    fn reject_approved_fails() {
+        let mut review = make_review();
+        review.approve().unwrap();
+        assert!(review.reject().is_err());
+    }
+
+    #[test]
+    fn content_too_long_fails() {
+        let result = Review::new(
+            UserId::new(),
+            WorkshopId::new(),
+            5,
+            "Title".to_string(),
+            "x".repeat(2001),
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn rating_below_minimum_fails() {
+        let result = Review::new(
+            UserId::new(),
+            WorkshopId::new(),
+            0,
+            "Title".to_string(),
+            "Content".to_string(),
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn new_review_returns_created_event() {
+        let (_, event) = Review::new(
+            UserId::new(),
+            WorkshopId::new(),
+            4,
+            "Nice".to_string(),
+            "Good content".to_string(),
+        )
+        .unwrap();
+        assert!(matches!(event, DomainEvent::ReviewCreated { .. }));
+    }
+
+    #[test]
+    fn approve_returns_moderated_event() {
+        let mut review = make_review();
+        let event = review.approve().unwrap();
+        assert!(matches!(event, DomainEvent::ReviewModerated { to: "approved", .. }));
+    }
+
+    #[test]
+    fn reject_returns_moderated_event() {
+        let mut review = make_review();
+        let event = review.reject().unwrap();
+        assert!(matches!(event, DomainEvent::ReviewModerated { to: "rejected", .. }));
+    }
 }

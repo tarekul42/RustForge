@@ -28,7 +28,7 @@ impl AuditRepository for PostgresAuditRepository {
     ) -> Result<(), DomainError> {
         sqlx::query(
             r#"INSERT INTO audit_logs (event_type, aggregate_type, aggregate_id, actor_id, changes, ip_address, user_agent)
-               VALUES ($1, $2, $3, $4, $5, $6, $7)"#,
+               VALUES ($1, $2, $3, $4, $5, $6::inet, $7)"#,
         )
         .bind(event_type)
         .bind(aggregate_type)

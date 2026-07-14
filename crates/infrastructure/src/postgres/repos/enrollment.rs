@@ -20,7 +20,7 @@ impl EnrollmentRepository for PostgresEnrollmentRepository {
     async fn create(&self, enrollment: &Enrollment) -> Result<(), DomainError> {
         sqlx::query(
             r#"INSERT INTO enrollments (id, user_id, workshop_id, payment_id, student_count, status, created_at, updated_at)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"#,
+               VALUES ($1, $2, $3, $4, $5, $6::text::enrollment_status, $7, $8)"#,
         )
         .bind(enrollment.id.into_uuid())
         .bind(enrollment.user_id.into_uuid())
@@ -38,7 +38,7 @@ impl EnrollmentRepository for PostgresEnrollmentRepository {
 
     async fn find_by_id(&self, id: EnrollmentId) -> Result<Option<Enrollment>, DomainError> {
         let row = sqlx::query_as::<_, EnrollmentRow>(
-            r#"SELECT id, user_id, workshop_id, payment_id, student_count, status, created_at, updated_at
+            r#"SELECT id, user_id, workshop_id, payment_id, student_count, status::text, created_at, updated_at
                FROM enrollments WHERE id = $1"#,
         )
         .bind(id.into_uuid())
@@ -50,7 +50,7 @@ impl EnrollmentRepository for PostgresEnrollmentRepository {
 
     async fn find_by_user(&self, user_id: UserId) -> Result<Vec<Enrollment>, DomainError> {
         let rows = sqlx::query_as::<_, EnrollmentRow>(
-            r#"SELECT id, user_id, workshop_id, payment_id, student_count, status, created_at, updated_at
+            r#"SELECT id, user_id, workshop_id, payment_id, student_count, status::text, created_at, updated_at
                FROM enrollments
                WHERE user_id = $1
                ORDER BY created_at DESC"#,
@@ -68,7 +68,7 @@ impl EnrollmentRepository for PostgresEnrollmentRepository {
         workshop_id: WorkshopId,
     ) -> Result<Vec<Enrollment>, DomainError> {
         let rows = sqlx::query_as::<_, EnrollmentRow>(
-            r#"SELECT id, user_id, workshop_id, payment_id, student_count, status, created_at, updated_at
+            r#"SELECT id, user_id, workshop_id, payment_id, student_count, status::text, created_at, updated_at
                FROM enrollments
                WHERE user_id = $1 AND workshop_id = $2
                ORDER BY created_at DESC"#,
@@ -83,7 +83,7 @@ impl EnrollmentRepository for PostgresEnrollmentRepository {
 
     async fn update(&self, enrollment: &Enrollment) -> Result<(), DomainError> {
         sqlx::query(
-            r#"UPDATE enrollments SET payment_id = $2, student_count = $3, status = $4, updated_at = $5
+            r#"UPDATE enrollments SET payment_id = $2, student_count = $3, status = $4::text::enrollment_status, updated_at = $5
                WHERE id = $1"#,
         )
         .bind(enrollment.id.into_uuid())
@@ -104,8 +104,8 @@ impl EnrollmentRepository for PostgresEnrollmentRepository {
         to_status: &str,
     ) -> Result<bool, DomainError> {
         let rows = sqlx::query(
-            r#"UPDATE enrollments SET status = $3, updated_at = NOW()
-               WHERE id = $1 AND status = $2"#,
+            r#"UPDATE enrollments SET status = $3::text::enrollment_status, updated_at = NOW()
+               WHERE id = $1 AND status = $2::text::enrollment_status"#,
         )
         .bind(id.into_uuid())
         .bind(from_status)

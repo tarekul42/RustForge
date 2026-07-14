@@ -21,7 +21,7 @@ impl UserRepository for PostgresUserRepository {
     async fn create(&self, user: &User) -> Result<(), DomainError> {
         sqlx::query(
             r#"INSERT INTO users (id, email, name, password_hash, phone, picture_url, age, address, role, status, is_verified, expertise, bio, created_at, updated_at)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)"#,
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::text::user_role, $10::text::user_status, $11, $12, $13, $14, $15)"#,
         )
         .bind(user.id.into_uuid())
         .bind(user.email.as_str())
@@ -47,7 +47,7 @@ impl UserRepository for PostgresUserRepository {
     async fn find_by_id(&self, id: UserId) -> Result<Option<User>, DomainError> {
         let row = sqlx::query_as::<_, UserRow>(
             r#"SELECT id, email, name, password_hash, phone, picture_url, age, address,
-                      role, status, is_verified, expertise, bio, created_at, updated_at
+                      role::text, status::text, is_verified, expertise, bio, created_at, updated_at
                FROM users WHERE id = $1"#,
         )
         .bind(id.into_uuid())
@@ -60,7 +60,7 @@ impl UserRepository for PostgresUserRepository {
     async fn find_by_email(&self, email: &str) -> Result<Option<User>, DomainError> {
         let row = sqlx::query_as::<_, UserRow>(
             r#"SELECT id, email, name, password_hash, phone, picture_url, age, address,
-                      role, status, is_verified, expertise, bio, created_at, updated_at
+                      role::text, status::text, is_verified, expertise, bio, created_at, updated_at
                FROM users WHERE email = $1"#,
         )
         .bind(email)
@@ -73,8 +73,9 @@ impl UserRepository for PostgresUserRepository {
     async fn update(&self, user: &User) -> Result<(), DomainError> {
         sqlx::query(
             r#"UPDATE users SET email = $2, name = $3, password_hash = $4, phone = $5,
-               picture_url = $6, age = $7, address = $8, role = $9, status = $10,
-               is_verified = $11, expertise = $12, bio = $13, updated_at = $14
+               picture_url = $6, age = $7, address = $8, role = $9::text::user_role,
+               status = $10::text::user_status, is_verified = $11, expertise = $12,
+               bio = $13, updated_at = $14
                WHERE id = $1"#,
         )
         .bind(user.id.into_uuid())
@@ -109,7 +110,7 @@ impl UserRepository for PostgresUserRepository {
     async fn find_all(&self) -> Result<Vec<User>, DomainError> {
         let rows = sqlx::query_as::<_, UserRow>(
             r#"SELECT id, email, name, password_hash, phone, picture_url, age, address,
-                      role, status, is_verified, expertise, bio, created_at, updated_at
+                      role::text, status::text, is_verified, expertise, bio, created_at, updated_at
                FROM users ORDER BY created_at DESC"#,
         )
         .fetch_all(&self.pool)

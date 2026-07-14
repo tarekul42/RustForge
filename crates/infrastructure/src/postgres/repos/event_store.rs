@@ -39,7 +39,7 @@ impl EventStore for PostgresEventStore {
         sqlx::query(
             r#"INSERT INTO audit_logs (event_type, aggregate_type, aggregate_id, actor_id,
                ip_address, user_agent, changes)
-               VALUES ($1, $2, $3, $4, $5, $6, $7)"#,
+               VALUES ($1, $2, $3, $4, $5::inet, $6, $7)"#,
         )
         .bind(event_type)
         .bind(aggregate_type)

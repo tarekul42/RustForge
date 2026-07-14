@@ -43,3 +43,45 @@ pub enum ObjectStoreError {
     #[error("S3 error: {0}")]
     S3Error(String),
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn upload_failed_display() {
+        let err = ObjectStoreError::UploadFailed("timeout".into());
+        assert_eq!(err.to_string(), "Upload failed: timeout");
+    }
+
+    #[test]
+    fn delete_failed_display() {
+        let err = ObjectStoreError::DeleteFailed("not found".into());
+        assert_eq!(err.to_string(), "Delete failed: not found");
+    }
+
+    #[test]
+    fn presign_failed_display() {
+        let err = ObjectStoreError::PresignFailed("expired key".into());
+        assert_eq!(err.to_string(), "Presigned URL generation failed: expired key");
+    }
+
+    #[test]
+    fn s3_error_display() {
+        let err = ObjectStoreError::S3Error("access denied".into());
+        assert_eq!(err.to_string(), "S3 error: access denied");
+    }
+
+    #[test]
+    fn debug_format_includes_variant() {
+        let err = ObjectStoreError::UploadFailed("err".into());
+        let debug = format!("{err:?}");
+        assert!(debug.contains("UploadFailed"));
+    }
+
+    #[test]
+    fn error_is_send_sync() {
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<ObjectStoreError>();
+    }
+}

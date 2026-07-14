@@ -228,3 +228,92 @@ pub trait EventStore: Send + Sync {
         context: Option<&AuditContext>,
     ) -> Result<(), crate::error::DomainError>;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn event_type_user_registered() {
+        let event = DomainEvent::UserRegistered {
+            user_id: UserId::new(),
+            email: crate::value_objects::Email::new("test@example.com").unwrap(),
+        };
+        assert_eq!(event.event_type(), "user.registered");
+    }
+
+    #[test]
+    fn event_type_user_verified() {
+        let event = DomainEvent::UserVerified {
+            user_id: UserId::new(),
+        };
+        assert_eq!(event.event_type(), "user.verified");
+    }
+
+    #[test]
+    fn event_type_password_changed() {
+        let event = DomainEvent::PasswordChanged {
+            user_id: UserId::new(),
+        };
+        assert_eq!(event.event_type(), "user.password_changed");
+    }
+
+    #[test]
+    fn event_type_enrollment_created() {
+        let event = DomainEvent::EnrollmentCreated {
+            enrollment_id: EnrollmentId::new(),
+        };
+        assert_eq!(event.event_type(), "enrollment.created");
+    }
+
+    #[test]
+    fn event_type_payment_created() {
+        let event = DomainEvent::PaymentCreated {
+            payment_id: PaymentId::new(),
+        };
+        assert_eq!(event.event_type(), "payment.created");
+    }
+
+    #[test]
+    fn aggregate_type_user_events() {
+        let event = DomainEvent::UserVerified {
+            user_id: UserId::new(),
+        };
+        assert_eq!(event.aggregate_type(), "User");
+    }
+
+    #[test]
+    fn aggregate_type_payment_events() {
+        let event = DomainEvent::PaymentRefunded {
+            payment_id: PaymentId::new(),
+            reason: "test".to_string(),
+        };
+        assert_eq!(event.aggregate_type(), "Payment");
+    }
+
+    #[test]
+    fn aggregate_type_contact_events() {
+        let event = DomainEvent::ContactCreated {
+            contact_id: ContactId::new(),
+        };
+        assert_eq!(event.aggregate_type(), "Contact");
+    }
+
+    #[test]
+    fn event_debug_format() {
+        let event = DomainEvent::UserRegistered {
+            user_id: UserId::new(),
+            email: crate::value_objects::Email::new("test@example.com").unwrap(),
+        };
+        let debug = format!("{event:?}");
+        assert!(debug.contains("UserRegistered"));
+    }
+
+    #[test]
+    fn audit_context_default() {
+        let ctx = AuditContext::default();
+        assert!(ctx.actor_id.is_none());
+        assert!(ctx.ip_address.is_none());
+        assert!(ctx.user_agent.is_none());
+    }
+}

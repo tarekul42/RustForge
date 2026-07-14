@@ -29,3 +29,42 @@ impl std::error::Error for Error {
         Some(&*self.inner)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::error::Error as StdError;
+    use std::io;
+
+    #[test]
+    fn display_delegates_to_inner() {
+        let err = Error::new(io::Error::new(io::ErrorKind::NotFound, "file missing"));
+        assert_eq!(err.to_string(), "file missing");
+    }
+
+    #[test]
+    fn source_returns_inner() {
+        let inner = io::Error::new(io::ErrorKind::PermissionDenied, "denied");
+        let err = Error::new(inner);
+        assert!(err.source().is_some());
+    }
+
+    #[test]
+    fn debug_shows_inner() {
+        let err = Error::new(io::Error::other("oops"));
+        let debug = format!("{err:?}");
+        assert!(debug.contains("Error"));
+    }
+
+    #[test]
+    fn error_is_send_sync() {
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<Error>();
+    }
+
+    #[test]
+    fn from_boxed_error() {
+        let err = Error::new(io::Error::new(io::ErrorKind::InvalidData, "bad data"));
+        assert!(err.to_string().contains("bad data"));
+    }
+}

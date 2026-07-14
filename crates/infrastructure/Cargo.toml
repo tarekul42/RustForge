@@ -25,3 +25,9 @@ hex.workspace = true
 lettre.workspace = true
 tera.workspace = true
 printpdf.workspace = true
+
+[dev-dependencies]
+testcontainers.workspace = true
+testcontainers-modules.workspace = true
+tokio.workspace = true
+

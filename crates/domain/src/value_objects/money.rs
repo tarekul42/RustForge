@@ -111,4 +111,23 @@ mod tests {
         let b = Money::from_cents(300);
         assert!(a.sub(&b).is_none());
     }
+
+    #[test]
+    fn from_cents_zero() {
+        let m = Money::from_cents(0);
+        assert!(m.is_zero());
+        assert_eq!(m.cents(), 0);
+    }
+
+    #[test]
+    fn multiply_by_quantity() {
+        let m = Money::from_cents(100);
+        assert_eq!(m.mul(5).cents(), 500);
+    }
+
+    #[test]
+    fn multiply_by_zero() {
+        let m = Money::from_cents(500);
+        assert_eq!(m.mul(0).cents(), 0);
+    }
 }

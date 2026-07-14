@@ -174,4 +174,60 @@ mod tests {
         workshop.reserve_seat().unwrap();
         assert_eq!(workshop.available_seats(), Some(9));
     }
+
+    #[test]
+    fn reserve_seat_on_unlimited_workshop_succeeds() {
+        let mut workshop = make_workshop();
+        workshop.max_seats = None;
+        for _ in 0..100 {
+            workshop.reserve_seat().unwrap();
+        }
+        assert_eq!(workshop.current_enrollments, 100);
+    }
+
+    #[test]
+    fn reserve_seat_at_exact_capacity_fails() {
+        let mut workshop = make_workshop();
+        workshop.max_seats = Some(5);
+        for _ in 0..5 {
+            workshop.reserve_seat().unwrap();
+        }
+        assert!(workshop.reserve_seat().is_err());
+    }
+
+    #[test]
+    fn release_seat_below_zero_floors() {
+        let mut workshop = make_workshop();
+        workshop.release_seat();
+        assert_eq!(workshop.current_enrollments, 0);
+    }
+
+    #[test]
+    fn available_seats_none_for_unlimited() {
+        let workshop = make_workshop();
+        assert_eq!(workshop.available_seats(), None);
+    }
+
+    #[test]
+    fn available_seats_zero_when_full() {
+        let mut workshop = make_workshop();
+        workshop.max_seats = Some(3);
+        for _ in 0..3 {
+            workshop.reserve_seat().unwrap();
+        }
+        assert_eq!(workshop.available_seats(), Some(0));
+    }
+
+    #[test]
+    fn new_workshop_returns_created_event() {
+        let (_, event) = Workshop::new(
+            "Test".to_string(),
+            "test".to_string(),
+            1000,
+            CategoryId::new(),
+            LevelId::new(),
+            UserId::new(),
+        );
+        assert!(matches!(event, DomainEvent::WorkshopCreated { .. }));
+    }
 }

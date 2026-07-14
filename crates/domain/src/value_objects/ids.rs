@@ -75,3 +75,57 @@ id_type!(AuthCodeId, "auth_code");
 id_type!(ContactId, "contact");
 id_type!(JobId, "job");
 id_type!(RefundLogId, "refund_log");
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn id_new_generates_uuid_v7() {
+        let id = UserId::new();
+        let uuid = id.as_uuid();
+        assert_eq!(uuid.get_version(), Some(uuid::Version::SortRand));
+    }
+
+    #[test]
+    fn id_parse_valid_uuid() {
+        let uuid = Uuid::now_v7();
+        let id = UserId::parse_str(&uuid.to_string()).unwrap();
+        assert_eq!(id.into_uuid(), uuid);
+    }
+
+    #[test]
+    fn id_parse_invalid_uuid_fails() {
+        assert!(UserId::parse_str("not-a-uuid").is_err());
+    }
+
+    #[test]
+    fn id_from_uuid_and_into_uuid_round_trip() {
+        let uuid = Uuid::now_v7();
+        let id = UserId::from_uuid(uuid);
+        assert_eq!(id.into_uuid(), uuid);
+    }
+
+    #[test]
+    fn id_display_matches_uuid_format() {
+        let uuid = Uuid::now_v7();
+        let id = UserId::from_uuid(uuid);
+        assert_eq!(id.to_string(), uuid.to_string());
+    }
+
+    #[test]
+    fn id_default_generates_new() {
+        let id1 = UserId::default();
+        let id2 = UserId::new();
+        assert_ne!(id1, id2); // extremely unlikely collision
+    }
+
+    #[test]
+    fn different_id_types_are_distinct() {
+        let user_id = UserId::new();
+        let workshop_id = WorkshopId::new();
+        // Compile-time guarantee: can't compare UserId with WorkshopId
+        // Just verify the traits are implemented
+        let _ = format!("{user_id} {workshop_id}");
+    }
+}

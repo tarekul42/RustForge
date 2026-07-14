@@ -377,4 +377,60 @@ mod tests {
         assert_eq!(config.database.max_connections, 10);
         assert_eq!(config.observability.log_level, "info");
     }
+
+    #[test]
+    fn server_config_defaults() {
+        let cfg = ServerConfig::default();
+        assert_eq!(cfg.host, "0.0.0.0");
+        assert_eq!(cfg.port, 5000);
+        assert_eq!(cfg.workers, 0);
+    }
+
+    #[test]
+    fn database_config_defaults() {
+        let cfg = DatabaseConfig::default();
+        assert!(cfg.url.is_empty());
+        assert_eq!(cfg.max_connections, 10);
+        assert_eq!(cfg.statement_timeout_secs, 30);
+    }
+
+    #[test]
+    fn observability_config_defaults() {
+        let cfg = ObservabilityConfig::default();
+        assert_eq!(cfg.log_level, "info");
+        assert_eq!(cfg.metrics_port, 5001);
+        assert!(cfg.otlp_endpoint.is_none());
+        assert!((cfg.trace_sample_ratio - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn email_config_defaults() {
+        let cfg = EmailConfig::default();
+        assert!(cfg.smtp_host.is_empty());
+        assert_eq!(cfg.smtp_port, 587);
+        assert_eq!(cfg.from_name, "Skill Workshop");
+        assert_eq!(cfg.template_dir, "templates");
+    }
+
+    #[test]
+    fn payment_config_defaults() {
+        let cfg = PaymentConfig::default();
+        assert!(cfg.store_id.is_empty());
+        assert_eq!(cfg.base_url, "https://sandbox.sslcommerz.com");
+    }
+
+    #[test]
+    fn worker_config_defaults() {
+        let cfg = WorkerConfig::default();
+        assert_eq!(cfg.poll_interval_ms, 5000);
+        assert_eq!(cfg.max_retry_attempts, 5);
+        assert_eq!(cfg.base_backoff_seconds, 30);
+        assert_eq!(cfg.job_retention_days, 30);
+    }
+
+    #[test]
+    fn s3_config_defaults() {
+        let cfg = S3Config::default();
+        assert_eq!(cfg.invoices_bucket, "invoices");
+    }
 }

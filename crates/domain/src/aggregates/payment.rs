@@ -247,4 +247,68 @@ mod tests {
         payment.mark_cancelled().unwrap();
         assert_eq!(payment.status, PaymentStatus::Cancelled);
     }
+
+    #[test]
+    fn mark_failed_on_paid_fails() {
+        let mut payment = make_payment();
+        payment.mark_paid(None).unwrap();
+        assert!(payment.mark_failed().is_err());
+    }
+
+    #[test]
+    fn mark_cancelled_on_paid_fails() {
+        let mut payment = make_payment();
+        payment.mark_paid(None).unwrap();
+        assert!(payment.mark_cancelled().is_err());
+    }
+
+    #[test]
+    fn refund_cancelled_fails() {
+        let mut payment = make_payment();
+        payment.mark_cancelled().unwrap();
+        assert!(payment.refund("test".to_string()).is_err());
+    }
+
+    #[test]
+    fn refund_already_refunded_fails() {
+        let mut payment = make_payment();
+        payment.mark_paid(None).unwrap();
+        payment.refund("test".to_string()).unwrap();
+        assert!(payment.refund("test".to_string()).is_err());
+    }
+
+    #[test]
+    fn mark_paid_attaches_gateway_data() {
+        let mut payment = make_payment();
+        let data = serde_json::json!({"txn_id": "ABC123"});
+        payment.mark_paid(Some(data.clone())).unwrap();
+        assert_eq!(payment.payment_gateway_data, Some(data));
+    }
+
+    #[test]
+    fn mark_paid_with_none_gateway_data() {
+        let mut payment = make_payment();
+        payment.mark_paid(None).unwrap();
+        assert!(payment.payment_gateway_data.is_none());
+    }
+
+    #[test]
+    fn new_payment_returns_created_event() {
+        let (_, event) = Payment::new(
+            EnrollmentId::new(),
+            "TXN".to_string(),
+            Money::from_cents(1000),
+        );
+        assert!(matches!(event, DomainEvent::PaymentCreated { .. }));
+    }
+
+    #[test]
+    fn payment_amount_stored_correctly() {
+        let (payment, _) = Payment::new(
+            EnrollmentId::new(),
+            "TXN".to_string(),
+            Money::from_cents(4999),
+        );
+        assert_eq!(payment.amount.cents(), 4999);
+    }
 }

@@ -29,3 +29,28 @@ impl RefundLog {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::value_objects::ids::PaymentId;
+
+    #[test]
+    fn new_refund_log_stores_fields() {
+        let log = RefundLog::new(PaymentId::new(), 5000, "Customer request".to_string());
+        assert_eq!(log.amount_cents, 5000);
+        assert_eq!(log.reason, "Customer request");
+    }
+
+    #[test]
+    fn new_refund_log_has_id() {
+        let log = RefundLog::new(PaymentId::new(), 1000, "refund".to_string());
+        assert_ne!(log.id, RefundLogId::default());
+    }
+
+    #[test]
+    fn refund_log_zero_amount() {
+        let log = RefundLog::new(PaymentId::new(), 0, "test".to_string());
+        assert_eq!(log.amount_cents, 0);
+    }
+}

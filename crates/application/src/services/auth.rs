@@ -19,6 +19,7 @@ pub struct AuthService<U: UserRepository, S: SessionRepository, O: OtpRepository
 }
 
 /// Result of a successful authentication (register or login).
+#[derive(Debug)]
 pub struct AuthResult {
     /// The authenticated user.
     pub user: User,

@@ -20,6 +20,10 @@ tokio.workspace = true
 argon2.workspace = true
 sha2.workspace = true
 rand.workspace = true
+rand_core = { version = "0.6", features = ["getrandom"] }
 subtle.workspace = true
 hex.workspace = true
 async-trait.workspace = true
+
+[dev-dependencies]
+pretty_assertions.workspace = true

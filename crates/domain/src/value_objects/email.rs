@@ -87,4 +87,29 @@ mod tests {
     fn missing_domain_fails() {
         assert!(Email::new("user@").is_err());
     }
+
+    #[test]
+    fn valid_email_with_plus_sign() {
+        let email = Email::new("user+tag@example.com").unwrap();
+        assert_eq!(email.as_str(), "user+tag@example.com");
+    }
+
+    #[test]
+    fn valid_email_with_subdomain() {
+        let email = Email::new("user@sub.example.com").unwrap();
+        assert_eq!(email.as_str(), "user@sub.example.com");
+    }
+
+    #[test]
+    fn email_display_shows_normalized() {
+        let email = Email::new("User@Example.COM").unwrap();
+        assert_eq!(email.to_string(), "user@example.com");
+    }
+
+    #[test]
+    fn email_equality_is_case_insensitive() {
+        let a = Email::new("A@B.com").unwrap();
+        let b = Email::new("a@b.com").unwrap();
+        assert_eq!(a, b);
+    }
 }

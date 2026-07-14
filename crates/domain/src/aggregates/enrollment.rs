@@ -240,4 +240,37 @@ mod tests {
         enrollment.fail().unwrap();
         assert!(enrollment.fail().is_err());
     }
+
+    #[test]
+    fn complete_already_complete_fails() {
+        let mut enrollment = make_enrollment();
+        enrollment.complete().unwrap();
+        assert!(enrollment.complete().is_err());
+    }
+
+    #[test]
+    fn fail_cancelled_fails() {
+        let mut enrollment = make_enrollment();
+        enrollment.cancel().unwrap();
+        assert!(enrollment.fail().is_err());
+    }
+
+    #[test]
+    fn fail_complete_fails() {
+        let mut enrollment = make_enrollment();
+        enrollment.complete().unwrap();
+        assert!(enrollment.fail().is_err());
+    }
+
+    #[test]
+    fn new_enrollment_has_no_payment() {
+        let enrollment = make_enrollment();
+        assert!(enrollment.payment_id.is_none());
+    }
+
+    #[test]
+    fn new_enrollment_returns_created_event() {
+        let (_, event) = Enrollment::new(UserId::new(), WorkshopId::new(), 1);
+        assert!(matches!(event, DomainEvent::EnrollmentCreated { .. }));
+    }
 }

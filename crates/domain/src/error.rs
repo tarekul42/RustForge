@@ -76,3 +76,64 @@ impl DomainError {
         Self::Internal(msg.into())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::value_objects::ids::UserId;
+
+    #[test]
+    fn not_found_produces_correct_message() {
+        let err = DomainError::not_found("User", UserId::new());
+        assert!(err.to_string().contains("User"));
+        assert!(err.to_string().contains("not found"));
+    }
+
+    #[test]
+    fn invalid_transition_produces_correct_message() {
+        let err = DomainError::invalid_transition("pending", "complete");
+        assert!(err.to_string().contains("pending"));
+        assert!(err.to_string().contains("complete"));
+    }
+
+    #[test]
+    fn validation_produces_correct_message() {
+        let err = DomainError::validation("email is required");
+        assert_eq!(err.to_string(), "Validation error: email is required");
+    }
+
+    #[test]
+    fn infrastructure_produces_correct_message() {
+        let err = DomainError::infrastructure("connection failed");
+        assert!(err.to_string().contains("connection failed"));
+    }
+
+    #[test]
+    fn error_display_is_readable() {
+        let err = DomainError::RateLimitExceeded;
+        assert_eq!(format!("{err}"), "Rate limit exceeded");
+    }
+
+    #[test]
+    fn not_found_equality() {
+        let a = DomainError::not_found("User", "id-1");
+        let b = DomainError::not_found("User", "id-1");
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn workshop_full_variant() {
+        let err = DomainError::WorkshopFull;
+        assert_eq!(err.to_string(), "Workshop is full");
+    }
+
+    #[test]
+    fn insufficient_seats_message() {
+        let err = DomainError::InsufficientSeats {
+            requested: 5,
+            available: 2,
+        };
+        assert!(err.to_string().contains("5"));
+        assert!(err.to_string().contains("2"));
+    }
+}

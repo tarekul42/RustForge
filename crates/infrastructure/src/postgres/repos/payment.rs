@@ -22,7 +22,7 @@ impl PaymentRepository for PostgresPaymentRepository {
         sqlx::query(
             r#"INSERT INTO payments (id, enrollment_id, transaction_id, amount_cents,
                payment_gateway_data, invoice_url, status, created_at, updated_at)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"#,
+               VALUES ($1, $2, $3, $4, $5, $6, $7::text::payment_status, $8, $9)"#,
         )
         .bind(payment.id.into_uuid())
         .bind(payment.enrollment_id.into_uuid())
@@ -42,7 +42,7 @@ impl PaymentRepository for PostgresPaymentRepository {
     async fn find_by_id(&self, id: PaymentId) -> Result<Option<Payment>, DomainError> {
         let row = sqlx::query_as::<_, PaymentRow>(
             r#"SELECT id, enrollment_id, transaction_id, amount_cents,
-                      payment_gateway_data, invoice_url, status, created_at, updated_at
+                      payment_gateway_data, invoice_url, status::text, created_at, updated_at
                FROM payments WHERE id = $1"#,
         )
         .bind(id.into_uuid())
@@ -58,7 +58,7 @@ impl PaymentRepository for PostgresPaymentRepository {
     ) -> Result<Option<Payment>, DomainError> {
         let row = sqlx::query_as::<_, PaymentRow>(
             r#"SELECT id, enrollment_id, transaction_id, amount_cents,
-                      payment_gateway_data, invoice_url, status, created_at, updated_at
+                      payment_gateway_data, invoice_url, status::text, created_at, updated_at
                FROM payments WHERE enrollment_id = $1"#,
         )
         .bind(enrollment_id.into_uuid())
@@ -76,7 +76,7 @@ impl PaymentRepository for PostgresPaymentRepository {
     ) -> Result<Option<Payment>, DomainError> {
         let row = sqlx::query_as::<_, PaymentRow>(
             r#"SELECT id, enrollment_id, transaction_id, amount_cents,
-                      payment_gateway_data, invoice_url, status, created_at, updated_at
+                      payment_gateway_data, invoice_url, status::text, created_at, updated_at
                FROM payments WHERE transaction_id = $1"#,
         )
         .bind(transaction_id)
@@ -95,8 +95,8 @@ impl PaymentRepository for PostgresPaymentRepository {
         to_status: &str,
     ) -> Result<bool, DomainError> {
         let rows = sqlx::query(
-            r#"UPDATE payments SET status = $3, updated_at = NOW()
-               WHERE id = $1 AND status = $2"#,
+            r#"UPDATE payments SET status = $3::text::payment_status, updated_at = NOW()
+               WHERE id = $1 AND status = $2::text::payment_status"#,
         )
         .bind(id.into_uuid())
         .bind(from_status)
@@ -121,7 +121,7 @@ impl PaymentRepository for PostgresPaymentRepository {
     async fn update(&self, payment: &Payment) -> Result<(), DomainError> {
         sqlx::query(
             r#"UPDATE payments SET amount_cents = $2, payment_gateway_data = $3,
-               invoice_url = $4, status = $5, updated_at = $6
+               invoice_url = $4, status = $5::text::payment_status, updated_at = $6
                WHERE id = $1"#,
         )
         .bind(payment.id.into_uuid())

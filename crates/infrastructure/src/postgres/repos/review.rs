@@ -20,7 +20,7 @@ impl ReviewRepository for PostgresReviewRepository {
     async fn create(&self, review: &Review) -> Result<(), DomainError> {
         sqlx::query(
             r#"INSERT INTO reviews (id, user_id, workshop_id, rating, title, content, status, created_at, updated_at)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"#,
+               VALUES ($1, $2, $3, $4, $5, $6, $7::text::review_status, $8, $9)"#,
         )
         .bind(review.id.into_uuid())
         .bind(review.user_id.into_uuid())
@@ -39,7 +39,7 @@ impl ReviewRepository for PostgresReviewRepository {
 
     async fn find_by_id(&self, id: ReviewId) -> Result<Option<Review>, DomainError> {
         let row = sqlx::query_as::<_, ReviewRow>(
-            r#"SELECT id, user_id, workshop_id, rating, title, content, status, created_at, updated_at
+            r#"SELECT id, user_id, workshop_id, rating, title, content, status::text, created_at, updated_at
                FROM reviews WHERE id = $1"#,
         )
         .bind(id.into_uuid())
@@ -55,7 +55,7 @@ impl ReviewRepository for PostgresReviewRepository {
         workshop_id: WorkshopId,
     ) -> Result<Option<Review>, DomainError> {
         let row = sqlx::query_as::<_, ReviewRow>(
-            r#"SELECT id, user_id, workshop_id, rating, title, content, status, created_at, updated_at
+            r#"SELECT id, user_id, workshop_id, rating, title, content, status::text, created_at, updated_at
                FROM reviews WHERE user_id = $1 AND workshop_id = $2"#,
         )
         .bind(user_id.into_uuid())
@@ -68,7 +68,7 @@ impl ReviewRepository for PostgresReviewRepository {
 
     async fn find_by_workshop(&self, workshop_id: WorkshopId) -> Result<Vec<Review>, DomainError> {
         let rows = sqlx::query_as::<_, ReviewRow>(
-            r#"SELECT id, user_id, workshop_id, rating, title, content, status, created_at, updated_at
+            r#"SELECT id, user_id, workshop_id, rating, title, content, status::text, created_at, updated_at
                FROM reviews WHERE workshop_id = $1
                ORDER BY created_at DESC"#,
         )
@@ -81,7 +81,7 @@ impl ReviewRepository for PostgresReviewRepository {
 
     async fn update(&self, review: &Review) -> Result<(), DomainError> {
         sqlx::query(
-            r#"UPDATE reviews SET rating = $2, title = $3, content = $4, status = $5, updated_at = $6
+            r#"UPDATE reviews SET rating = $2, title = $3, content = $4, status = $5::text::review_status, updated_at = $6
                WHERE id = $1"#,
         )
         .bind(review.id.into_uuid())
