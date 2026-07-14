@@ -923,10 +923,7 @@ impl PasswordAlgorithm {
         // password concatenated with the user validation salt. The 48-byte string consisting of
         // the 32-byte hash followed by the user validation salt followed by the user key salt is
         // stored as the U key.
-        let mut user_value = [0u8; 48];
-        let mut rng = rand::rng();
-
-        rng.fill(&mut user_value);
+        let mut user_value: [u8; 48] = rand::rng().random();
 
         let user_validation_salt = &user_value[32..][..8];
 
@@ -989,10 +986,7 @@ impl PasswordAlgorithm {
         // 48-byte U string as generated in Algorithm 8. The 48-byte string consisting of the
         // 32-byte hash followed by the owner validation salt followed by the owner key salt is
         // stored as the O key.
-        let mut owner_value = [0u8; 48];
-        let mut rng = rand::rng();
-
-        rng.fill(&mut owner_value);
+        let mut owner_value: [u8; 48] = rand::rng().random();
 
         let owner_validation_salt = &owner_value[32..][..8];
 

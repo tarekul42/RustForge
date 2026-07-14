@@ -1,7 +1,9 @@
 use crate::config::ObservabilityConfig;
 use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::WithExportConfig;
-use tracing_subscriber::{filter::EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt, Registry};
+use tracing_subscriber::{
+    filter::EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt, Registry,
+};
 
 /// Initialize the tracing subscriber for structured logging.
 ///
@@ -19,8 +21,7 @@ pub fn init(config: &ObservabilityConfig) {
     let env_filter =
         EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(&config.log_level));
 
-    let is_production = std::env::var("APP_ENV")
-        .is_ok_and(|v| v == "production");
+    let is_production = std::env::var("APP_ENV").is_ok_and(|v| v == "production");
 
     if let Some(endpoint) = &config.otlp_endpoint {
         let exporter = opentelemetry_otlp::SpanExporter::builder()
@@ -40,13 +41,17 @@ pub fn init(config: &ObservabilityConfig) {
             Registry::default()
                 .with(env_filter)
                 .with(fmt::layer().json().flatten_event(true))
-                .with(tracing_opentelemetry::layer().with_tracer(tracer_provider.tracer("sw-shared")))
+                .with(
+                    tracing_opentelemetry::layer().with_tracer(tracer_provider.tracer("sw-shared")),
+                )
                 .init();
         } else {
             Registry::default()
                 .with(env_filter)
                 .with(fmt::layer().pretty())
-                .with(tracing_opentelemetry::layer().with_tracer(tracer_provider.tracer("sw-shared")))
+                .with(
+                    tracing_opentelemetry::layer().with_tracer(tracer_provider.tracer("sw-shared")),
+                )
                 .init();
         }
     } else if is_production {
