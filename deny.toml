@@ -1,18 +1,11 @@
 [advisories]
 ignore = [
-    # RUSTSEC-2023-0071: rsa 0.9.10 (Marvin Attack) is pulled by sqlx-mysql which
-    # is not compiled — we only use the `postgres` feature of sqlx.
-    "RUSTSEC-2023-0071",
     # RUSTSEC-2025-0141: bincode is unmaintained. Transitive via printpdf (invoice gen).
     # No safe upgrade available. Accepting risk for non-critical feature.
     "RUSTSEC-2025-0141",
-    # RUSTSEC-2024-0370: proc-macro-error is unmaintained. Transitive via ouroboros → printpdf.
-    "RUSTSEC-2024-0370",
     # RUSTSEC-2026-0173: proc-macro-error2 is unmaintained. Transitive via validator_derive.
     # Accepting risk — the crate still compiles and works correctly.
     "RUSTSEC-2026-0173",
-    # RUSTSEC-2026-0192: ttf-parser is unmaintained. Transitive via lopdf → printpdf.
-    "RUSTSEC-2026-0192",
     # RUSTSEC-2026-0098 / RUSTSEC-2026-0099 / RUSTSEC-2026-0104: rustls-webpki vulnerabilities.
     # Transitive via AWS SDK (aws-smithy-http-client → rustls 0.21.x). The fix is in
     # rustls-webpki >=0.103.12 but AWS SDK hasn't updated yet. Tracked upstream.

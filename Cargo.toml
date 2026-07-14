@@ -48,12 +48,12 @@ infer = "0.19"
 moka = { version = "0.12", features = ["future"] }
 lettre = { version = "0.11", default-features = false, features = ["builder", "smtp-transport", "tokio1-rustls-tls"] }
 tera = { version = "2", features = ["glob_fs"] }
-printpdf = "0.10"
+printpdf = "0.11"
 
 proptest = "1"
 pretty_assertions = "1"
-testcontainers = "0.24"
-testcontainers-modules = { version = "0.12", features = ["postgres", "minio"] }
+testcontainers = "0.27"
+testcontainers-modules = { version = "0.15", features = ["postgres", "minio"] }
 wiremock = "0.6"
 mockall = "0.13"
 
