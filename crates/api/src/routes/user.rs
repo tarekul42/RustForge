@@ -86,14 +86,14 @@ async fn get_profile(
     let (_session_id, user_id) = session::resolve_session(&headers, &state).await?;
     let user = state.auth_service.get_user(user_id).await?;
     Ok(Json(UserProfileResponse {
-        user_id: user.id.to_string(),
-        email: user.email.to_string(),
-        name: Some(user.name),
-        picture_url: user.picture_url,
-        role: user.role.as_str().to_string(),
-        is_verified: user.is_verified,
-        created_at: user.created_at.to_rfc3339(),
-        updated_at: user.updated_at.to_rfc3339(),
+        user_id: user.id().to_string(),
+        email: user.email().to_string(),
+        name: Some(user.name().to_string()),
+        picture_url: user.picture_url().map(|s| s.to_string()),
+        role: user.role().as_str().to_string(),
+        is_verified: user.is_verified(),
+        created_at: user.created_at().to_rfc3339(),
+        updated_at: user.updated_at().to_rfc3339(),
     }))
 }
 
@@ -112,14 +112,14 @@ async fn update_profile(
         )
         .await?;
     Ok(Json(UserProfileResponse {
-        user_id: user.id.to_string(),
-        email: user.email.to_string(),
-        name: Some(user.name),
-        picture_url: user.picture_url,
-        role: user.role.as_str().to_string(),
-        is_verified: user.is_verified,
-        created_at: user.created_at.to_rfc3339(),
-        updated_at: user.updated_at.to_rfc3339(),
+        user_id: user.id().to_string(),
+        email: user.email().to_string(),
+        name: Some(user.name().to_string()),
+        picture_url: user.picture_url().map(|s| s.to_string()),
+        role: user.role().as_str().to_string(),
+        is_verified: user.is_verified(),
+        created_at: user.created_at().to_rfc3339(),
+        updated_at: user.updated_at().to_rfc3339(),
     }))
 }
 
@@ -135,10 +135,10 @@ async fn list_registrations(
         enrollments
             .into_iter()
             .map(|e| RegistrationResponse {
-                id: e.id.to_string(),
-                workshop_id: e.workshop_id.to_string(),
-                status: e.status.as_str().to_string(),
-                registered_at: e.created_at.to_rfc3339(),
+                id: e.id().to_string(),
+                workshop_id: e.workshop_id().to_string(),
+                status: e.status().as_str().to_string(),
+                registered_at: e.created_at().to_rfc3339(),
             })
             .collect(),
     ))
@@ -157,14 +157,14 @@ async fn list_users(
     let responses = users
         .into_iter()
         .map(|u| UserProfileResponse {
-            user_id: u.id.to_string(),
-            email: u.email.to_string(),
-            name: Some(u.name),
-            picture_url: u.picture_url,
-            role: u.role.as_str().to_string(),
-            is_verified: u.is_verified,
-            created_at: u.created_at.to_rfc3339(),
-            updated_at: u.updated_at.to_rfc3339(),
+            user_id: u.id().to_string(),
+            email: u.email().to_string(),
+            name: Some(u.name().to_string()),
+            picture_url: u.picture_url().map(|s| s.to_string()),
+            role: u.role().as_str().to_string(),
+            is_verified: u.is_verified(),
+            created_at: u.created_at().to_rfc3339(),
+            updated_at: u.updated_at().to_rfc3339(),
         })
         .collect();
     Ok(Json(responses))
@@ -184,14 +184,14 @@ async fn get_user(
     let target_id = sw_domain::value_objects::ids::UserId::from_uuid(id);
     let target = state.auth_service.get_user(target_id).await?;
     Ok(Json(UserProfileResponse {
-        user_id: target.id.to_string(),
-        email: target.email.to_string(),
-        name: Some(target.name),
-        picture_url: target.picture_url,
-        role: target.role.as_str().to_string(),
-        is_verified: target.is_verified,
-        created_at: target.created_at.to_rfc3339(),
-        updated_at: target.updated_at.to_rfc3339(),
+        user_id: target.id().to_string(),
+        email: target.email().to_string(),
+        name: Some(target.name().to_string()),
+        picture_url: target.picture_url().map(|s| s.to_string()),
+        role: target.role().as_str().to_string(),
+        is_verified: target.is_verified(),
+        created_at: target.created_at().to_rfc3339(),
+        updated_at: target.updated_at().to_rfc3339(),
     }))
 }
 
@@ -222,14 +222,14 @@ async fn admin_update_user(
         })
         .await?;
     Ok(Json(UserProfileResponse {
-        user_id: user.id.to_string(),
-        email: user.email.to_string(),
-        name: Some(user.name),
-        picture_url: user.picture_url,
-        role: user.role.as_str().to_string(),
-        is_verified: user.is_verified,
-        created_at: user.created_at.to_rfc3339(),
-        updated_at: user.updated_at.to_rfc3339(),
+        user_id: user.id().to_string(),
+        email: user.email().to_string(),
+        name: Some(user.name().to_string()),
+        picture_url: user.picture_url().map(|s| s.to_string()),
+        role: user.role().as_str().to_string(),
+        is_verified: user.is_verified(),
+        created_at: user.created_at().to_rfc3339(),
+        updated_at: user.updated_at().to_rfc3339(),
     }))
 }
 

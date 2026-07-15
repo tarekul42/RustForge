@@ -20,10 +20,10 @@ impl LevelRepository for PostgresLevelRepository {
         sqlx::query!(
             r#"INSERT INTO levels (id, name, created_at, updated_at)
                VALUES ($1, $2, $3, $4)"#,
-            level.id.into_uuid(),
-            level.name,
-            level.created_at,
-            level.updated_at,
+            level.id().into_uuid(),
+            level.name(),
+            level.created_at(),
+            level.updated_at(),
         )
         .execute(&self.pool)
         .await
@@ -59,9 +59,9 @@ impl LevelRepository for PostgresLevelRepository {
     async fn update(&self, level: &Level) -> Result<(), DomainError> {
         sqlx::query!(
             r#"UPDATE levels SET name = $2, updated_at = $3 WHERE id = $1"#,
-            level.id.into_uuid(),
-            level.name,
-            level.updated_at,
+            level.id().into_uuid(),
+            level.name(),
+            level.updated_at(),
         )
         .execute(&self.pool)
         .await
@@ -88,11 +88,11 @@ struct LevelRow {
 
 impl LevelRow {
     fn into_domain(self) -> Result<Level, DomainError> {
-        Ok(Level {
-            id: LevelId::from_uuid(self.id),
-            name: self.name,
-            created_at: self.created_at,
-            updated_at: self.updated_at,
-        })
+        Ok(Level::from_parts(
+            LevelId::from_uuid(self.id),
+            self.name,
+            self.created_at,
+            self.updated_at,
+        ))
     }
 }

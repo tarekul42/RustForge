@@ -36,13 +36,13 @@ struct CategoryResponse {
 impl From<sw_domain::aggregates::category::Category> for CategoryResponse {
     fn from(c: sw_domain::aggregates::category::Category) -> Self {
         Self {
-            id: c.id.to_string(),
-            name: c.name,
-            slug: c.slug,
-            description: c.description,
-            thumbnail_url: c.thumbnail_url,
-            created_at: c.created_at.to_rfc3339(),
-            updated_at: c.updated_at.to_rfc3339(),
+            id: c.id().to_string(),
+            name: c.name().to_string(),
+            slug: c.slug().to_string(),
+            description: c.description().map(|s| s.to_string()),
+            thumbnail_url: c.thumbnail_url().map(|s| s.to_string()),
+            created_at: c.created_at().to_rfc3339(),
+            updated_at: c.updated_at().to_rfc3339(),
         }
     }
 }

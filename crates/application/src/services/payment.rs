@@ -93,7 +93,7 @@ impl<
             .await?
             .ok_or_else(|| ApplicationError::not_found("Payment", transaction_id))?;
 
-        if payment.status != PaymentStatus::Unpaid {
+        if payment.status() != PaymentStatus::Unpaid {
             return Ok(payment);
         }
 
@@ -111,11 +111,11 @@ impl<
 
         if let Some(ref gw_amount) = validation.amount {
             let gw_cents = parse_amount_cents(gw_amount);
-            let diff = (payment.amount.cents() - gw_cents).abs();
+            let diff = (payment.amount().cents() - gw_cents).abs();
             if diff > self.amount_tolerance_cents {
                 return Err(ApplicationError::internal(format!(
                     "Amount mismatch: expected {} cents, gateway returned {} cents",
-                    payment.amount.cents(),
+                    payment.amount().cents(),
                     gw_cents
                 )));
             }
@@ -136,7 +136,7 @@ impl<
             let updated = sqlx::query_scalar::<_, bool>(
                 "UPDATE payments SET status = 'paid', updated_at = NOW() WHERE id = $1 AND status = 'unpaid'",
             )
-            .bind(payment.id.into_uuid())
+            .bind(payment.id().into_uuid())
             .fetch_one(&mut *tx)
             .await
             .unwrap_or(false);
@@ -146,13 +146,13 @@ impl<
                 return Ok(payment);
             }
 
-            payment.status = PaymentStatus::Paid;
-            payment.payment_gateway_data = Some(validation.raw_data);
+            payment.set_status(PaymentStatus::Paid);
+            payment.set_payment_gateway_data(Some(validation.raw_data));
 
             if let Err(e) = sqlx::query!(
                 "UPDATE payments SET payment_gateway_data = $2, status = 'paid', updated_at = NOW() WHERE id = $1",
-                payment.id.into_uuid(),
-                payment.payment_gateway_data,
+                payment.id().into_uuid(),
+                payment.payment_gateway_data(),
             )
             .execute(&mut *tx)
             .await
@@ -163,9 +163,9 @@ impl<
 
             enrollment = self
                 .enrollment_repo
-                .find_by_id(payment.enrollment_id)
+                .find_by_id(payment.enrollment_id())
                 .await?
-                .ok_or_else(|| ApplicationError::not_found("Enrollment", payment.enrollment_id))?;
+                .ok_or_else(|| ApplicationError::not_found("Enrollment", payment.enrollment_id()))?;
 
             let event = enrollment
                 .complete()
@@ -174,7 +174,7 @@ impl<
             let enrollment_updated = sqlx::query_scalar::<_, bool>(
                 "UPDATE enrollments SET status = 'complete', updated_at = NOW() WHERE id = $1 AND status = 'pending'",
             )
-            .bind(enrollment.id.into_uuid())
+            .bind(enrollment.id().into_uuid())
             .fetch_one(&mut *tx)
             .await
             .unwrap_or(false);
@@ -190,7 +190,7 @@ impl<
             self.publish_event_in_tx(
                 &mut tx,
                 DomainEvent::PaymentStatusChanged {
-                    payment_id: payment.id,
+                    payment_id: payment.id(),
                     from: "unpaid",
                     to: "paid",
                 },
@@ -208,20 +208,20 @@ impl<
         } else {
             let updated = self
                 .payment_repo
-                .update_status_cas(payment.id, "unpaid", "paid")
+                .update_status_cas(payment.id(), "unpaid", "paid")
                 .await?;
             if !updated {
                 return Ok(payment);
             }
 
-            payment.status = PaymentStatus::Paid;
-            payment.payment_gateway_data = Some(validation.raw_data);
+            payment.set_status(PaymentStatus::Paid);
+            payment.set_payment_gateway_data(Some(validation.raw_data));
 
             enrollment = self
                 .enrollment_repo
-                .find_by_id(payment.enrollment_id)
+                .find_by_id(payment.enrollment_id())
                 .await?
-                .ok_or_else(|| ApplicationError::not_found("Enrollment", payment.enrollment_id))?;
+                .ok_or_else(|| ApplicationError::not_found("Enrollment", payment.enrollment_id()))?;
 
             let event = enrollment
                 .complete()
@@ -229,7 +229,7 @@ impl<
 
             let enrollment_updated = self
                 .enrollment_repo
-                .update_status_cas(enrollment.id, "pending", enrollment.status.as_str())
+                .update_status_cas(enrollment.id(), "pending", enrollment.status().as_str())
                 .await?;
             if !enrollment_updated {
                 return Err(ApplicationError::conflict(
@@ -239,8 +239,8 @@ impl<
 
             self.payment_repo.update(&payment).await?;
             self.publish_event(event).await?;
-            self.publish_event(DomainEvent::PaymentStatusChanged {
-                payment_id: payment.id,
+            self.publish_event(            DomainEvent::PaymentStatusChanged {
+                payment_id: payment.id(),
                 from: "unpaid",
                 to: "paid",
             })
@@ -271,26 +271,26 @@ impl<
             .await?
             .ok_or_else(|| ApplicationError::not_found("Payment", transaction_id))?;
 
-        if payment.status != PaymentStatus::Unpaid {
+        if payment.status() != PaymentStatus::Unpaid {
             return Ok(payment);
         }
 
         let updated = self
             .payment_repo
-            .update_status_cas(payment.id, "unpaid", "failed")
+            .update_status_cas(payment.id(), "unpaid", "failed")
             .await?;
         if !updated {
             return Ok(payment);
         }
 
         let mut payment = payment;
-        payment.status = PaymentStatus::Failed;
+        payment.set_status(PaymentStatus::Failed);
 
         let enrollment = self
             .enrollment_repo
-            .find_by_id(payment.enrollment_id)
+            .find_by_id(payment.enrollment_id())
             .await?
-            .ok_or_else(|| ApplicationError::not_found("Enrollment", payment.enrollment_id))?;
+            .ok_or_else(|| ApplicationError::not_found("Enrollment", payment.enrollment_id()))?;
 
         let mut enrollment = enrollment;
         let event = enrollment
@@ -299,7 +299,7 @@ impl<
 
         let enrollment_updated = self
             .enrollment_repo
-            .update_status_cas(enrollment.id, "pending", "failed")
+            .update_status_cas(enrollment.id(), "pending", "failed")
             .await?;
         if !enrollment_updated {
             return Err(ApplicationError::conflict(
@@ -308,7 +308,7 @@ impl<
         }
 
         self.workshop_repo
-            .release_seat_atomic(enrollment.workshop_id)
+            .release_seat_atomic(enrollment.workshop_id())
             .await?;
         self.publish_event(event).await?;
         Ok(payment)
@@ -326,26 +326,26 @@ impl<
             .await?
             .ok_or_else(|| ApplicationError::not_found("Payment", transaction_id))?;
 
-        if payment.status != PaymentStatus::Unpaid {
+        if payment.status() != PaymentStatus::Unpaid {
             return Ok(payment);
         }
 
         let updated = self
             .payment_repo
-            .update_status_cas(payment.id, "unpaid", "cancelled")
+            .update_status_cas(payment.id(), "unpaid", "cancelled")
             .await?;
         if !updated {
             return Ok(payment);
         }
 
         let mut payment = payment;
-        payment.status = PaymentStatus::Cancelled;
+        payment.set_status(PaymentStatus::Cancelled);
 
         let enrollment = self
             .enrollment_repo
-            .find_by_id(payment.enrollment_id)
+            .find_by_id(payment.enrollment_id())
             .await?
-            .ok_or_else(|| ApplicationError::not_found("Enrollment", payment.enrollment_id))?;
+            .ok_or_else(|| ApplicationError::not_found("Enrollment", payment.enrollment_id()))?;
 
         let mut enrollment = enrollment;
         let event = enrollment
@@ -354,7 +354,7 @@ impl<
 
         let enrollment_updated = self
             .enrollment_repo
-            .update_status_cas(enrollment.id, "pending", "cancelled")
+            .update_status_cas(enrollment.id(), "pending", "cancelled")
             .await?;
         if !enrollment_updated {
             return Err(ApplicationError::conflict(
@@ -363,7 +363,7 @@ impl<
         }
 
         self.workshop_repo
-            .release_seat_atomic(enrollment.workshop_id)
+            .release_seat_atomic(enrollment.workshop_id())
             .await?;
         self.publish_event(event).await?;
         Ok(payment)
@@ -431,16 +431,16 @@ impl<
             .await?
             .ok_or_else(|| ApplicationError::not_found("Payment", payment_id))?;
 
-        if payment.status != PaymentStatus::Paid {
+        if payment.status() != PaymentStatus::Paid {
             return Err(ApplicationError::conflict(format!(
                 "Cannot refund payment with status '{}'",
-                payment.status.as_str()
+                payment.status().as_str()
             )));
         }
 
         let updated = self
             .payment_repo
-            .update_status_cas(payment.id, "paid", "refunded")
+            .update_status_cas(payment.id(), "paid", "refunded")
             .await?;
         if !updated {
             return Err(ApplicationError::conflict(
@@ -449,13 +449,13 @@ impl<
         }
 
         let mut payment = payment;
-        payment.status = PaymentStatus::Refunded;
+        payment.set_status(PaymentStatus::Refunded);
 
         let enrollment = self
             .enrollment_repo
-            .find_by_id(payment.enrollment_id)
+            .find_by_id(payment.enrollment_id())
             .await?
-            .ok_or_else(|| ApplicationError::not_found("Enrollment", payment.enrollment_id))?;
+            .ok_or_else(|| ApplicationError::not_found("Enrollment", payment.enrollment_id()))?;
 
         let mut enrollment = enrollment;
         let event = enrollment
@@ -464,7 +464,7 @@ impl<
 
         let enrollment_updated = self
             .enrollment_repo
-            .update_status_cas(enrollment.id, "complete", "cancelled")
+            .update_status_cas(enrollment.id(), "complete", "cancelled")
             .await?;
         if !enrollment_updated {
             return Err(ApplicationError::conflict(
@@ -473,16 +473,16 @@ impl<
         }
 
         self.workshop_repo
-            .release_seat_atomic(enrollment.workshop_id)
+            .release_seat_atomic(enrollment.workshop_id())
             .await?;
         self.publish_event(event).await?;
         self.publish_event(DomainEvent::PaymentRefunded {
-            payment_id: payment.id,
+            payment_id: payment.id(),
             reason: reason.clone(),
         })
         .await?;
 
-        let refund_log = RefundLog::new(payment.id, payment.amount.cents(), reason);
+        let refund_log = RefundLog::new(payment.id(), payment.amount().cents(), reason);
         self.refund_log_repo.create(&refund_log).await?;
 
         Ok(payment)
@@ -534,7 +534,7 @@ impl<
         payment: &Payment,
     ) -> Result<serde_json::Value, ApplicationError> {
         Ok(serde_json::json!({
-            "payment_id": payment.id,
+            "payment_id": payment.id(),
         }))
     }
 }

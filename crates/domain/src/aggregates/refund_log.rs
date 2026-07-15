@@ -6,15 +6,61 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RefundLog {
     /// Unique identifier for this refund record.
-    pub id: RefundLogId,
+    pub(crate) id: RefundLogId,
     /// The payment that was refunded.
-    pub payment_id: PaymentId,
+    pub(crate) payment_id: PaymentId,
     /// The amount refunded, in cents.
-    pub amount_cents: i64,
+    pub(crate) amount_cents: i64,
     /// Reason for the refund.
-    pub reason: String,
+    pub(crate) reason: String,
     /// When the refund was processed.
-    pub created_at: DateTime<Utc>,
+    pub(crate) created_at: DateTime<Utc>,
+}
+
+impl RefundLog {
+    /// Unique identifier for this refund record.
+    pub fn id(&self) -> RefundLogId {
+        self.id
+    }
+
+    /// The payment that was refunded.
+    pub fn payment_id(&self) -> PaymentId {
+        self.payment_id
+    }
+
+    /// The amount refunded, in cents.
+    pub fn amount_cents(&self) -> i64 {
+        self.amount_cents
+    }
+
+    /// Reason for the refund.
+    pub fn reason(&self) -> &str {
+        &self.reason
+    }
+
+    /// When the refund was processed.
+    pub fn created_at(&self) -> &DateTime<Utc> {
+        &self.created_at
+    }
+}
+
+impl RefundLog {
+    /// Restore a refund log from persisted data (used by infrastructure repos).
+    pub fn from_parts(
+        id: RefundLogId,
+        payment_id: PaymentId,
+        amount_cents: i64,
+        reason: String,
+        created_at: DateTime<Utc>,
+    ) -> Self {
+        Self {
+            id,
+            payment_id,
+            amount_cents,
+            reason,
+            created_at,
+        }
+    }
 }
 
 impl RefundLog {

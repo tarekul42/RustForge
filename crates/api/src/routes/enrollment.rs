@@ -80,8 +80,8 @@ async fn create_enrollment(
         .await?;
 
     Ok(Json(CreateEnrollmentResponse {
-        enrollment_id: result.enrollment.id.to_string(),
-        payment_id: result.payment.id.to_string(),
+        enrollment_id: result.enrollment.id().to_string(),
+        payment_id: result.payment.id().to_string(),
         gateway_url: result.gateway_url,
     }))
 }
@@ -98,14 +98,14 @@ async fn my_enrollments(
         enrollments
             .into_iter()
             .map(|e| EnrollmentResponse {
-                id: e.id.to_string(),
-                user_id: e.user_id.to_string(),
-                workshop_id: e.workshop_id.to_string(),
-                payment_id: e.payment_id.map(|p| p.to_string()),
-                student_count: e.student_count,
-                status: e.status.as_str().to_string(),
-                created_at: e.created_at.to_rfc3339(),
-                updated_at: e.updated_at.to_rfc3339(),
+                id: e.id().to_string(),
+                user_id: e.user_id().to_string(),
+                workshop_id: e.workshop_id().to_string(),
+                payment_id: e.payment_id().map(|p| p.to_string()),
+                student_count: e.student_count(),
+                status: e.status().as_str().to_string(),
+                created_at: e.created_at().to_rfc3339(),
+                updated_at: e.updated_at().to_rfc3339(),
             })
             .collect(),
     ))
@@ -127,18 +127,18 @@ async fn get_enrollment(
         .await?
         .ok_or(ApiError::NotFound)?;
 
-    if enrollment.user_id != user_id {
+    if enrollment.user_id() != user_id {
         return Err(ApiError::NotFound);
     }
 
     Ok(Json(EnrollmentResponse {
-        id: enrollment.id.to_string(),
-        user_id: enrollment.user_id.to_string(),
-        workshop_id: enrollment.workshop_id.to_string(),
-        payment_id: enrollment.payment_id.map(|p| p.to_string()),
-        student_count: enrollment.student_count,
-        status: enrollment.status.as_str().to_string(),
-        created_at: enrollment.created_at.to_rfc3339(),
-        updated_at: enrollment.updated_at.to_rfc3339(),
+        id: enrollment.id().to_string(),
+        user_id: enrollment.user_id().to_string(),
+        workshop_id: enrollment.workshop_id().to_string(),
+        payment_id: enrollment.payment_id().map(|p| p.to_string()),
+        student_count: enrollment.student_count(),
+        status: enrollment.status().as_str().to_string(),
+        created_at: enrollment.created_at().to_rfc3339(),
+        updated_at: enrollment.updated_at().to_rfc3339(),
     }))
 }

@@ -48,7 +48,7 @@ impl EnrollmentRepository for MockEnrollmentRepo {
             .lock()
             .unwrap()
             .iter()
-            .find(|e| e.id == id)
+            .find(|e| e.id() == id)
             .cloned())
     }
 
@@ -58,7 +58,7 @@ impl EnrollmentRepository for MockEnrollmentRepo {
             .lock()
             .unwrap()
             .iter()
-            .filter(|e| e.user_id == user_id)
+            .filter(|e| e.user_id() == user_id)
             .cloned()
             .collect())
     }
@@ -73,7 +73,7 @@ impl EnrollmentRepository for MockEnrollmentRepo {
             .lock()
             .unwrap()
             .iter()
-            .filter(|e| e.user_id == user_id)
+            .filter(|e| e.user_id() == user_id)
             .cloned()
             .collect())
     }
@@ -128,7 +128,7 @@ impl PaymentRepository for MockPaymentRepo {
             .lock()
             .unwrap()
             .iter()
-            .find(|p| p.id == id)
+            .find(|p| p.id() == id)
             .cloned())
     }
 
@@ -141,7 +141,7 @@ impl PaymentRepository for MockPaymentRepo {
             .lock()
             .unwrap()
             .iter()
-            .find(|p| p.enrollment_id == enrollment_id)
+            .find(|p| p.enrollment_id() == enrollment_id)
             .cloned())
     }
 
@@ -154,7 +154,7 @@ impl PaymentRepository for MockPaymentRepo {
             .lock()
             .unwrap()
             .iter()
-            .find(|p| p.transaction_id == transaction_id)
+            .find(|p| p.transaction_id() == transaction_id)
             .cloned())
     }
 
@@ -199,7 +199,7 @@ impl WorkshopRepository for MockWorkshopRepo {
             .lock()
             .unwrap()
             .iter()
-            .find(|w| w.id == id)
+            .find(|w| w.id() == id)
             .cloned())
     }
     async fn find_by_slug(&self, _slug: &str) -> Result<Option<Workshop>, DomainError> {
@@ -223,13 +223,13 @@ impl WorkshopRepository for MockWorkshopRepo {
         _url: &str,
         _s3_key: &str,
     ) -> Result<sw_domain::aggregates::workshop::WorkshopImage, DomainError> {
-        Ok(sw_domain::aggregates::workshop::WorkshopImage {
-            id: WorkshopImageId::new(),
-            workshop_id: _workshop_id,
-            url: String::new(),
-            s3_key: String::new(),
-            created_at: chrono::Utc::now(),
-        })
+        Ok(sw_domain::aggregates::workshop::WorkshopImage::from_parts(
+            WorkshopImageId::new(),
+            _workshop_id,
+            String::new(),
+            String::new(),
+            chrono::Utc::now(),
+        ))
     }
     async fn remove_image(&self, _image_id: WorkshopImageId) -> Result<(), DomainError> {
         Ok(())
@@ -383,7 +383,7 @@ fn make_enrollment_input(user_id: UserId, workshop_id: WorkshopId) -> CreateEnro
 #[tokio::test]
 async fn enrollment_create_success() {
     let workshop = make_workshop();
-    let workshop_id = workshop.id;
+    let workshop_id = workshop.id();
     let user_id = UserId::new();
 
     let service = EnrollmentService::new(
@@ -440,31 +440,31 @@ async fn payment_success_cas_idempotent() {
     let user_id = UserId::new();
     let workshop = make_workshop();
 
-    let payment = Payment {
-        id: payment_id,
+    let payment = Payment::from_parts(
+        payment_id,
         enrollment_id,
-        transaction_id: "txn_123".into(),
-        amount: Money::from_cents(10000),
-        payment_gateway_data: None,
-        invoice_url: None,
-        status: PaymentStatus::Unpaid,
-        created_at: chrono::Utc::now(),
-        updated_at: chrono::Utc::now(),
-    };
+        "txn_123".into(),
+        Money::from_cents(10000),
+        None,
+        None,
+        PaymentStatus::Unpaid,
+        chrono::Utc::now(),
+        chrono::Utc::now(),
+    );
 
     let pay_repo = MockPaymentRepo::new();
     pay_repo.payments.lock().unwrap().push(payment.clone());
 
-    let enrollment = Enrollment {
-        id: enrollment_id,
+    let enrollment = Enrollment::from_parts(
+        enrollment_id,
         user_id,
-        workshop_id: workshop.id,
-        payment_id: Some(payment_id),
-        student_count: 1,
-        status: EnrollmentStatus::Pending,
-        created_at: chrono::Utc::now(),
-        updated_at: chrono::Utc::now(),
-    };
+        workshop.id(),
+        Some(payment_id),
+        1,
+        EnrollmentStatus::Pending,
+        chrono::Utc::now(),
+        chrono::Utc::now(),
+    );
 
     let enroll_repo = MockEnrollmentRepo::new();
     enroll_repo.enrollments.lock().unwrap().push(enrollment);
@@ -505,31 +505,31 @@ async fn payment_success_cas_idempotent() {
 async fn refund_paid_payment_succeeds() {
     let payment_id = PaymentId::new();
     let enrollment_id = EnrollmentId::new();
-    let payment = Payment {
-        id: payment_id,
+    let payment = Payment::from_parts(
+        payment_id,
         enrollment_id,
-        transaction_id: "txn_refund".into(),
-        amount: Money::from_cents(10000),
-        payment_gateway_data: None,
-        invoice_url: None,
-        status: PaymentStatus::Paid,
-        created_at: chrono::Utc::now(),
-        updated_at: chrono::Utc::now(),
-    };
+        "txn_refund".into(),
+        Money::from_cents(10000),
+        None,
+        None,
+        PaymentStatus::Paid,
+        chrono::Utc::now(),
+        chrono::Utc::now(),
+    );
 
     let pay_repo = MockPaymentRepo::new();
     pay_repo.payments.lock().unwrap().push(payment);
 
-    let enrollment = Enrollment {
-        id: enrollment_id,
-        user_id: UserId::new(),
-        workshop_id: WorkshopId::new(),
-        payment_id: Some(payment_id),
-        student_count: 1,
-        status: EnrollmentStatus::Complete,
-        created_at: chrono::Utc::now(),
-        updated_at: chrono::Utc::now(),
-    };
+    let enrollment = Enrollment::from_parts(
+        enrollment_id,
+        UserId::new(),
+        WorkshopId::new(),
+        Some(payment_id),
+        1,
+        EnrollmentStatus::Complete,
+        chrono::Utc::now(),
+        chrono::Utc::now(),
+    );
 
     let enroll_repo = MockEnrollmentRepo::new();
     enroll_repo.enrollments.lock().unwrap().push(enrollment);
@@ -559,17 +559,17 @@ async fn refund_paid_payment_succeeds() {
 async fn refund_unpaid_payment_fails() {
     let payment_id = PaymentId::new();
     let enrollment_id = EnrollmentId::new();
-    let payment = Payment {
-        id: payment_id,
+    let payment = Payment::from_parts(
+        payment_id,
         enrollment_id,
-        transaction_id: "txn_unpaid".into(),
-        amount: Money::from_cents(10000),
-        payment_gateway_data: None,
-        invoice_url: None,
-        status: PaymentStatus::Unpaid,
-        created_at: chrono::Utc::now(),
-        updated_at: chrono::Utc::now(),
-    };
+        "txn_unpaid".into(),
+        Money::from_cents(10000),
+        None,
+        None,
+        PaymentStatus::Unpaid,
+        chrono::Utc::now(),
+        chrono::Utc::now(),
+    );
 
     let pay_repo = MockPaymentRepo::new();
     pay_repo.payments.lock().unwrap().push(payment);

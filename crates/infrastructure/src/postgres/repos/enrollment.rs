@@ -21,14 +21,14 @@ impl EnrollmentRepository for PostgresEnrollmentRepository {
         sqlx::query!(
             r#"INSERT INTO enrollments (id, user_id, workshop_id, payment_id, student_count, status, created_at, updated_at)
                VALUES ($1, $2, $3, $4, $5, $6::text::enrollment_status, $7, $8)"#,
-            enrollment.id.into_uuid(),
-            enrollment.user_id.into_uuid(),
-            enrollment.workshop_id.into_uuid(),
-            enrollment.payment_id.map(|p| p.into_uuid()),
-            enrollment.student_count,
-            enrollment.status.as_str(),
-            enrollment.created_at,
-            enrollment.updated_at,
+            enrollment.id().into_uuid(),
+            enrollment.user_id().into_uuid(),
+            enrollment.workshop_id().into_uuid(),
+            enrollment.payment_id().map(|p| p.into_uuid()),
+            enrollment.student_count(),
+            enrollment.status().as_str(),
+            enrollment.created_at(),
+            enrollment.updated_at(),
         )
         .execute(&self.pool)
         .await
@@ -88,11 +88,11 @@ impl EnrollmentRepository for PostgresEnrollmentRepository {
         sqlx::query!(
             r#"UPDATE enrollments SET payment_id = $2, student_count = $3, status = $4::text::enrollment_status, updated_at = $5
                WHERE id = $1"#,
-            enrollment.id.into_uuid(),
-            enrollment.payment_id.map(|p| p.into_uuid()),
-            enrollment.student_count,
-            enrollment.status.as_str(),
-            enrollment.updated_at,
+            enrollment.id().into_uuid(),
+            enrollment.payment_id().map(|p| p.into_uuid()),
+            enrollment.student_count(),
+            enrollment.status().as_str(),
+            enrollment.updated_at(),
         )
         .execute(&self.pool)
         .await
@@ -163,15 +163,15 @@ impl EnrollmentRow {
         let status = EnrollmentStatus::from_str(&self.status).ok_or_else(|| {
             DomainError::infrastructure(format!("invalid enrollment status: {}", self.status))
         })?;
-        Ok(Enrollment {
-            id: EnrollmentId::from_uuid(self.id),
-            user_id: UserId::from_uuid(self.user_id),
-            workshop_id: WorkshopId::from_uuid(self.workshop_id),
-            payment_id: self.payment_id.map(PaymentId::from_uuid),
-            student_count: self.student_count,
+        Ok(Enrollment::from_parts(
+            EnrollmentId::from_uuid(self.id),
+            UserId::from_uuid(self.user_id),
+            WorkshopId::from_uuid(self.workshop_id),
+            self.payment_id.map(PaymentId::from_uuid),
+            self.student_count,
             status,
-            created_at: self.created_at,
-            updated_at: self.updated_at,
-        })
+            self.created_at,
+            self.updated_at,
+        ))
     }
 }

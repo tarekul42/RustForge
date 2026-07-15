@@ -20,11 +20,11 @@ impl RefundLogRepository for PostgresRefundLogRepository {
         sqlx::query!(
             r#"INSERT INTO refund_logs (id, payment_id, amount_cents, reason, created_at)
                VALUES ($1, $2, $3, $4, $5)"#,
-            log.id.into_uuid(),
-            log.payment_id.into_uuid(),
-            log.amount_cents,
-            log.reason,
-            log.created_at,
+            log.id().into_uuid(),
+            log.payment_id().into_uuid(),
+            log.amount_cents(),
+            log.reason(),
+            log.created_at(),
         )
         .execute(&self.pool)
         .await

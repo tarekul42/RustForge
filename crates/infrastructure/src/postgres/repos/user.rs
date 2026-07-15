@@ -22,21 +22,21 @@ impl UserRepository for PostgresUserRepository {
         sqlx::query!(
             r#"INSERT INTO users (id, email, name, password_hash, phone, picture_url, age, address, role, status, is_verified, expertise, bio, created_at, updated_at)
                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::text::user_role, $10::text::user_status, $11, $12, $13, $14, $15)"#,
-            user.id.into_uuid(),
-            user.email.as_str(),
-            user.name,
-            user.password_hash,
-            user.phone,
-            user.picture_url,
-            user.age,
-            user.address,
-            user.role.as_str(),
-            user.status.as_str(),
-            user.is_verified,
-            user.expertise,
-            user.bio,
-            user.created_at,
-            user.updated_at,
+            user.id().into_uuid(),
+            user.email().as_str(),
+            user.name(),
+            user.password_hash(),
+            user.phone(),
+            user.picture_url(),
+            user.age(),
+            user.address(),
+            user.role().as_str(),
+            user.status().as_str(),
+            user.is_verified(),
+            user.expertise(),
+            user.bio(),
+            user.created_at(),
+            user.updated_at(),
         )
         .execute(&self.pool)
         .await
@@ -79,20 +79,20 @@ impl UserRepository for PostgresUserRepository {
                status = $10::text::user_status, is_verified = $11, expertise = $12,
                bio = $13, updated_at = $14
                WHERE id = $1"#,
-            user.id.into_uuid(),
-            user.email.as_str(),
-            user.name,
-            user.password_hash,
-            user.phone,
-            user.picture_url,
-            user.age,
-            user.address,
-            user.role.as_str(),
-            user.status.as_str(),
-            user.is_verified,
-            user.expertise,
-            user.bio,
-            user.updated_at,
+            user.id().into_uuid(),
+            user.email().as_str(),
+            user.name(),
+            user.password_hash(),
+            user.phone(),
+            user.picture_url(),
+            user.age(),
+            user.address(),
+            user.role().as_str(),
+            user.status().as_str(),
+            user.is_verified(),
+            user.expertise(),
+            user.bio(),
+            user.updated_at(),
         )
         .execute(&self.pool)
         .await
@@ -153,22 +153,22 @@ impl UserRow {
         let email = Email::new(&self.email)
             .map_err(|_| DomainError::infrastructure("invalid email in database".to_string()))?;
 
-        Ok(User {
-            id: UserId::from_uuid(self.id),
+        Ok(User::from_parts(
+            UserId::from_uuid(self.id),
             email,
-            name: self.name,
-            password_hash: self.password_hash,
-            phone: self.phone,
-            picture_url: self.picture_url,
-            age: self.age,
-            address: self.address,
+            self.name,
+            self.password_hash,
+            self.phone,
+            self.picture_url,
+            self.age,
+            self.address,
             role,
             status,
-            is_verified: self.is_verified,
-            expertise: self.expertise,
-            bio: self.bio,
-            created_at: self.created_at,
-            updated_at: self.updated_at,
-        })
+            self.is_verified,
+            self.expertise,
+            self.bio,
+            self.created_at,
+            self.updated_at,
+        ))
     }
 }

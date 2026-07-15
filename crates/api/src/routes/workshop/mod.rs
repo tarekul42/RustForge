@@ -145,7 +145,7 @@ async fn create_workshop(
         })
         .await?;
 
-    let images = state.workshop_service.get_images(workshop.id).await?;
+    let images = state.workshop_service.get_images(workshop.id()).await?;
     Ok(Json(to_workshop_response(workshop, images)))
 }
 
@@ -155,7 +155,7 @@ async fn list_workshops(
     let workshops = state.workshop_service.list().await?;
     let mut responses = Vec::with_capacity(workshops.len());
     for w in workshops {
-        let images = state.workshop_service.get_images(w.id).await?;
+        let images = state.workshop_service.get_images(w.id()).await?;
         responses.push(to_workshop_response(w, images));
     }
     Ok(Json(responses))
@@ -166,7 +166,7 @@ async fn get_workshop_by_slug(
     Path(slug): Path<String>,
 ) -> Result<Json<WorkshopResponse>, ApiError> {
     let workshop = state.workshop_service.get_by_slug(&slug).await?;
-    let images = state.workshop_service.get_images(workshop.id).await?;
+    let images = state.workshop_service.get_images(workshop.id()).await?;
     Ok(Json(to_workshop_response(workshop, images)))
 }
 
@@ -228,7 +228,7 @@ async fn update_workshop(
         })
         .await?;
 
-    let images = state.workshop_service.get_images(workshop.id).await?;
+    let images = state.workshop_service.get_images(workshop.id()).await?;
     Ok(Json(to_workshop_response(workshop, images)))
 }
 
@@ -271,9 +271,9 @@ async fn add_workshop_image(
         .await?;
 
     Ok(Json(WorkshopImageResponse {
-        id: image.id.to_string(),
-        url: image.url,
-        created_at: image.created_at.to_rfc3339(),
+        id: image.id().to_string(),
+        url: image.url().to_string(),
+        created_at: image.created_at().to_rfc3339(),
     }))
 }
 
@@ -302,28 +302,28 @@ fn to_workshop_response(
     images: Vec<sw_domain::aggregates::workshop::WorkshopImage>,
 ) -> WorkshopResponse {
     WorkshopResponse {
-        id: w.id.to_string(),
-        title: w.title,
-        slug: w.slug,
-        description: w.description,
-        location: w.location,
-        price_cents: w.price_cents,
-        start_date: w.start_date.map(|d| d.to_rfc3339()),
-        end_date: w.end_date.map(|d| d.to_rfc3339()),
-        max_seats: w.max_seats,
-        current_enrollments: w.current_enrollments,
-        min_age: w.min_age,
-        category_id: w.category_id.to_string(),
-        level_id: w.level_id.to_string(),
-        created_by: w.created_by.to_string(),
-        created_at: w.created_at.to_rfc3339(),
-        updated_at: w.updated_at.to_rfc3339(),
+        id: w.id().to_string(),
+        title: w.title().to_string(),
+        slug: w.slug().to_string(),
+        description: w.description().map(|s| s.to_string()),
+        location: w.location().map(|s| s.to_string()),
+        price_cents: w.price_cents(),
+        start_date: w.start_date().map(|d| d.to_rfc3339()),
+        end_date: w.end_date().map(|d| d.to_rfc3339()),
+        max_seats: w.max_seats(),
+        current_enrollments: w.current_enrollments(),
+        min_age: w.min_age(),
+        category_id: w.category_id().to_string(),
+        level_id: w.level_id().to_string(),
+        created_by: w.created_by().to_string(),
+        created_at: w.created_at().to_rfc3339(),
+        updated_at: w.updated_at().to_rfc3339(),
         images: images
             .into_iter()
             .map(|i| WorkshopImageResponse {
-                id: i.id.to_string(),
-                url: i.url,
-                created_at: i.created_at.to_rfc3339(),
+                id: i.id().to_string(),
+                url: i.url().to_string(),
+                created_at: i.created_at().to_rfc3339(),
             })
             .collect(),
     }

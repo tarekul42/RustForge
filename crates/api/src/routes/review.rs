@@ -125,7 +125,7 @@ async fn update_review(
         .await?
         .ok_or(ApiError::NotFound)?;
 
-    if existing.user_id != caller.id && !caller.is_admin() {
+    if existing.user_id() != caller.id() && !caller.is_admin() {
         return Err(ApiError::Unauthorized(
             "Only the review owner or an admin can update this review".to_string(),
         ));
@@ -196,7 +196,7 @@ async fn delete_review(
         .await?
         .ok_or(ApiError::NotFound)?;
 
-    if existing.user_id != caller.id && !caller.is_admin() {
+    if existing.user_id() != caller.id() && !caller.is_admin() {
         return Err(ApiError::Unauthorized(
             "Only the review owner or an admin can delete this review".to_string(),
         ));
@@ -208,14 +208,14 @@ async fn delete_review(
 
 fn to_response(review: &sw_domain::aggregates::review::Review) -> ReviewResponse {
     ReviewResponse {
-        id: review.id.to_string(),
-        user_id: review.user_id.to_string(),
-        workshop_id: review.workshop_id.to_string(),
-        rating: review.rating,
-        title: review.title.clone(),
-        content: review.content.clone(),
-        status: review.status.as_str().to_string(),
-        created_at: review.created_at.to_rfc3339(),
-        updated_at: review.updated_at.to_rfc3339(),
+        id: review.id().to_string(),
+        user_id: review.user_id().to_string(),
+        workshop_id: review.workshop_id().to_string(),
+        rating: review.rating(),
+        title: review.title().to_string(),
+        content: review.content().to_string(),
+        status: review.status().as_str().to_string(),
+        created_at: review.created_at().to_rfc3339(),
+        updated_at: review.updated_at().to_rfc3339(),
     }
 }

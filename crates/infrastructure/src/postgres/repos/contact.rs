@@ -22,14 +22,14 @@ impl ContactRepository for PostgresContactRepository {
         sqlx::query!(
             r#"INSERT INTO contacts (id, name, email, subject, message, is_read, created_at, updated_at)
                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"#,
-            contact.id.into_uuid(),
-            contact.name,
-            contact.email.as_str(),
-            contact.subject,
-            contact.message,
-            contact.is_read,
-            contact.created_at,
-            contact.updated_at,
+            contact.id().into_uuid(),
+            contact.name(),
+            contact.email().as_str(),
+            contact.subject(),
+            contact.message(),
+            contact.is_read(),
+            contact.created_at(),
+            contact.updated_at(),
         )
         .execute(&self.pool)
         .await
@@ -82,13 +82,13 @@ impl ContactRepository for PostgresContactRepository {
         sqlx::query!(
             r#"UPDATE contacts SET name = $2, email = $3, subject = $4, message = $5, is_read = $6, updated_at = $7
                WHERE id = $1"#,
-            contact.id.into_uuid(),
-            contact.name,
-            contact.email.as_str(),
-            contact.subject,
-            contact.message,
-            contact.is_read,
-            contact.updated_at,
+            contact.id().into_uuid(),
+            contact.name(),
+            contact.email().as_str(),
+            contact.subject(),
+            contact.message(),
+            contact.is_read(),
+            contact.updated_at(),
         )
         .execute(&self.pool)
         .await
@@ -122,15 +122,15 @@ impl ContactRow {
         let email = Email::new(self.email).map_err(|e| {
             DomainError::infrastructure(format!("invalid email in contact row: {e}"))
         })?;
-        Ok(Contact {
-            id: ContactId::from_uuid(self.id),
-            name: self.name,
+        Ok(Contact::from_parts(
+            ContactId::from_uuid(self.id),
+            self.name,
             email,
-            subject: self.subject,
-            message: self.message,
-            is_read: self.is_read,
-            created_at: self.created_at,
-            updated_at: self.updated_at,
-        })
+            self.subject,
+            self.message,
+            self.is_read,
+            self.created_at,
+            self.updated_at,
+        ))
     }
 }

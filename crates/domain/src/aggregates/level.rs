@@ -7,13 +7,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Level {
     /// Unique identifier for this level.
-    pub id: LevelId,
+    pub(crate) id: LevelId,
     /// Human-readable name.
-    pub name: String,
+    pub(crate) name: String,
     /// Timestamp of creation.
-    pub created_at: DateTime<Utc>,
+    pub(crate) created_at: DateTime<Utc>,
     /// Timestamp of the last update.
-    pub updated_at: DateTime<Utc>,
+    pub(crate) updated_at: DateTime<Utc>,
 }
 
 impl Level {
@@ -37,6 +37,43 @@ impl Level {
         self.name = name;
         self.updated_at = Utc::now();
         DomainEvent::LevelUpdated { level_id: self.id }
+    }
+
+    /// Unique identifier for this level.
+    pub fn id(&self) -> LevelId {
+        self.id
+    }
+
+    /// Human-readable name.
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// Timestamp of creation.
+    pub fn created_at(&self) -> &DateTime<Utc> {
+        &self.created_at
+    }
+
+    /// Timestamp of the last update.
+    pub fn updated_at(&self) -> &DateTime<Utc> {
+        &self.updated_at
+    }
+}
+
+impl Level {
+    /// Restore a level from persisted data (used by infrastructure repos).
+    pub fn from_parts(
+        id: LevelId,
+        name: String,
+        created_at: DateTime<Utc>,
+        updated_at: DateTime<Utc>,
+    ) -> Self {
+        Self {
+            id,
+            name,
+            created_at,
+            updated_at,
+        }
     }
 }
 

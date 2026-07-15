@@ -142,7 +142,7 @@ async fn register(
 
     with_session_cookie(
         RegisterResponse {
-            user_id: result.user.id.to_string(),
+            user_id: result.user.id().to_string(),
             session_token: result.session_token.clone(),
             session_expires_at: result.session_expires_at.to_rfc3339(),
         },
@@ -163,7 +163,7 @@ async fn login(
 
     with_session_cookie(
         LoginResponse {
-            user_id: result.user.id.to_string(),
+            user_id: result.user.id().to_string(),
             session_token: result.session_token.clone(),
             session_expires_at: result.session_expires_at.to_rfc3339(),
         },
@@ -202,8 +202,8 @@ async fn session_handler(
     let user = state.auth_service.get_user(user_id).await?;
     Ok(Json(SessionResponse {
         user_id: user_id.to_string(),
-        email: user.email.to_string(),
-        role: user.role.as_str().to_string(),
+        email: user.email().to_string(),
+        role: user.role().as_str().to_string(),
     }))
 }
 

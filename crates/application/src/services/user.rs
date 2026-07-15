@@ -65,37 +65,37 @@ impl<R: UserRepository, E: EventStore> UserAdminService<R, E> {
             .ok_or_else(|| ApplicationError::not_found("User", input.user_id))?;
 
         if let Some(name) = input.name {
-            user.name = name;
+            user.set_name(name);
         }
         if let Some(role_str) = input.role {
             let role = sw_domain::aggregates::user::UserRole::from_str(&role_str)
                 .ok_or_else(|| ApplicationError::validation(format!("Invalid role: {role_str}")))?;
-            user.role = role;
+            user.set_role(role);
         }
         if let Some(status_str) = input.status {
             let status = sw_domain::aggregates::user::UserStatus::from_str(&status_str)
                 .ok_or_else(|| {
                     ApplicationError::validation(format!("Invalid status: {status_str}"))
                 })?;
-            user.status = status;
+            user.set_status(status);
         }
         if let Some(phone) = input.phone {
-            user.phone = Some(phone);
+            user.set_phone(Some(phone));
         }
         if let Some(age) = input.age {
-            user.age = Some(age);
+            user.set_age(Some(age));
         }
         if let Some(address) = input.address {
-            user.address = Some(address);
+            user.set_address(Some(address));
         }
         if let Some(expertise) = input.expertise {
-            user.expertise = Some(expertise);
+            user.set_expertise(Some(expertise));
         }
         if let Some(bio) = input.bio {
-            user.bio = Some(bio);
+            user.set_bio(Some(bio));
         }
 
-        user.updated_at = chrono::Utc::now();
+        user.touch();
         self.repo.update(&user).await?;
         self.publish_event(DomainEvent::UserUpdated {
             user_id: input.user_id,

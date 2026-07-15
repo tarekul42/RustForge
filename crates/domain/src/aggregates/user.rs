@@ -81,35 +81,35 @@ impl UserStatus {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
     /// Unique identifier for this user.
-    pub id: UserId,
+    pub(crate) id: UserId,
     /// Verified email address (lowercased).
-    pub email: Email,
+    pub(crate) email: Email,
     /// Display name.
-    pub name: String,
+    pub(crate) name: String,
     /// Bcrypt hash of the user's password.
-    pub password_hash: Option<String>,
+    pub(crate) password_hash: Option<String>,
     /// Optional phone number.
-    pub phone: Option<String>,
+    pub(crate) phone: Option<String>,
     /// URL to the user's profile picture.
-    pub picture_url: Option<String>,
+    pub(crate) picture_url: Option<String>,
     /// Age in years.
-    pub age: Option<i16>,
+    pub(crate) age: Option<i16>,
     /// Physical / mailing address.
-    pub address: Option<String>,
+    pub(crate) address: Option<String>,
     /// System role (affects permissions).
-    pub role: UserRole,
+    pub(crate) role: UserRole,
     /// Account status.
-    pub status: UserStatus,
+    pub(crate) status: UserStatus,
     /// Whether the email address has been verified.
-    pub is_verified: bool,
+    pub(crate) is_verified: bool,
     /// Instructor expertise description.
-    pub expertise: Option<String>,
+    pub(crate) expertise: Option<String>,
     /// Short biography.
-    pub bio: Option<String>,
+    pub(crate) bio: Option<String>,
     /// Timestamp of account creation.
-    pub created_at: DateTime<Utc>,
+    pub(crate) created_at: DateTime<Utc>,
     /// Timestamp of the last update.
-    pub updated_at: DateTime<Utc>,
+    pub(crate) updated_at: DateTime<Utc>,
 }
 
 impl User {
@@ -214,6 +214,179 @@ impl User {
             self.role,
             UserRole::Admin | UserRole::SuperAdmin | UserRole::Instructor
         )
+    }
+
+    // --- Getters ---
+
+    /// Unique identifier for this user.
+    pub fn id(&self) -> UserId {
+        self.id
+    }
+
+    /// Verified email address.
+    pub fn email(&self) -> &Email {
+        &self.email
+    }
+
+    /// Display name.
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// Bcrypt hash of the user's password.
+    pub fn password_hash(&self) -> Option<&str> {
+        self.password_hash.as_deref()
+    }
+
+    /// Optional phone number.
+    pub fn phone(&self) -> Option<&str> {
+        self.phone.as_deref()
+    }
+
+    /// URL to the user's profile picture.
+    pub fn picture_url(&self) -> Option<&str> {
+        self.picture_url.as_deref()
+    }
+
+    /// Age in years.
+    pub fn age(&self) -> Option<i16> {
+        self.age
+    }
+
+    /// Physical / mailing address.
+    pub fn address(&self) -> Option<&str> {
+        self.address.as_deref()
+    }
+
+    /// System role.
+    pub fn role(&self) -> UserRole {
+        self.role
+    }
+
+    /// Account status.
+    pub fn status(&self) -> UserStatus {
+        self.status
+    }
+
+    /// Whether the email address has been verified.
+    pub fn is_verified(&self) -> bool {
+        self.is_verified
+    }
+
+    /// Instructor expertise description.
+    pub fn expertise(&self) -> Option<&str> {
+        self.expertise.as_deref()
+    }
+
+    /// Short biography.
+    pub fn bio(&self) -> Option<&str> {
+        self.bio.as_deref()
+    }
+
+    /// Timestamp of account creation.
+    pub fn created_at(&self) -> &DateTime<Utc> {
+        &self.created_at
+    }
+
+    /// Timestamp of the last update.
+    pub fn updated_at(&self) -> &DateTime<Utc> {
+        &self.updated_at
+    }
+
+    // --- Setters ---
+
+    /// Set the display name.
+    pub fn set_name(&mut self, name: String) {
+        self.name = name;
+    }
+
+    /// Set the profile picture URL.
+    pub fn set_picture_url(&mut self, url: Option<String>) {
+        self.picture_url = url;
+    }
+
+    /// Set the role.
+    pub fn set_role(&mut self, role: UserRole) {
+        self.role = role;
+    }
+
+    /// Set the account status.
+    pub fn set_status(&mut self, status: UserStatus) {
+        self.status = status;
+    }
+
+    /// Set the phone number.
+    pub fn set_phone(&mut self, phone: Option<String>) {
+        self.phone = phone;
+    }
+
+    /// Set the age.
+    pub fn set_age(&mut self, age: Option<i16>) {
+        self.age = age;
+    }
+
+    /// Set the address.
+    pub fn set_address(&mut self, address: Option<String>) {
+        self.address = address;
+    }
+
+    /// Set the expertise description.
+    pub fn set_expertise(&mut self, expertise: Option<String>) {
+        self.expertise = expertise;
+    }
+
+    /// Set the biography.
+    pub fn set_bio(&mut self, bio: Option<String>) {
+        self.bio = bio;
+    }
+
+    /// Set the verified flag.
+    pub fn set_is_verified(&mut self, is_verified: bool) {
+        self.is_verified = is_verified;
+    }
+
+    /// Set the updated_at timestamp to now.
+    pub fn touch(&mut self) {
+        self.updated_at = Utc::now();
+    }
+}
+
+impl User {
+    /// Restore a user from persisted data (used by infrastructure repos).
+    pub fn from_parts(
+        id: UserId,
+        email: Email,
+        name: String,
+        password_hash: Option<String>,
+        phone: Option<String>,
+        picture_url: Option<String>,
+        age: Option<i16>,
+        address: Option<String>,
+        role: UserRole,
+        status: UserStatus,
+        is_verified: bool,
+        expertise: Option<String>,
+        bio: Option<String>,
+        created_at: DateTime<Utc>,
+        updated_at: DateTime<Utc>,
+    ) -> Self {
+        Self {
+            id,
+            email,
+            name,
+            password_hash,
+            phone,
+            picture_url,
+            age,
+            address,
+            role,
+            status,
+            is_verified,
+            expertise,
+            bio,
+            created_at,
+            updated_at,
+        }
     }
 }
 

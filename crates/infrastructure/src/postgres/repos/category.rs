@@ -20,13 +20,13 @@ impl CategoryRepository for PostgresCategoryRepository {
         sqlx::query!(
             r#"INSERT INTO categories (id, name, slug, description, thumbnail_url, created_at, updated_at)
                VALUES ($1, $2, $3, $4, $5, $6, $7)"#,
-            category.id.into_uuid(),
-            category.name,
-            category.slug,
-            category.description,
-            category.thumbnail_url,
-            category.created_at,
-            category.updated_at,
+            category.id().into_uuid(),
+            category.name(),
+            category.slug(),
+            category.description(),
+            category.thumbnail_url(),
+            category.created_at(),
+            category.updated_at(),
         )
         .execute(&self.pool)
         .await
@@ -78,12 +78,12 @@ impl CategoryRepository for PostgresCategoryRepository {
         sqlx::query!(
             r#"UPDATE categories SET name = $2, slug = $3, description = $4, thumbnail_url = $5, updated_at = $6
                WHERE id = $1"#,
-            category.id.into_uuid(),
-            category.name,
-            category.slug,
-            category.description,
-            category.thumbnail_url,
-            category.updated_at,
+            category.id().into_uuid(),
+            category.name(),
+            category.slug(),
+            category.description(),
+            category.thumbnail_url(),
+            category.updated_at(),
         )
         .execute(&self.pool)
         .await
@@ -113,14 +113,14 @@ struct CategoryRow {
 
 impl CategoryRow {
     fn into_domain(self) -> Result<Category, DomainError> {
-        Ok(Category {
-            id: CategoryId::from_uuid(self.id),
-            name: self.name,
-            slug: self.slug,
-            description: self.description,
-            thumbnail_url: self.thumbnail_url,
-            created_at: self.created_at,
-            updated_at: self.updated_at,
-        })
+        Ok(Category::from_parts(
+            CategoryId::from_uuid(self.id),
+            self.name,
+            self.slug,
+            self.description,
+            self.thumbnail_url,
+            self.created_at,
+            self.updated_at,
+        ))
     }
 }

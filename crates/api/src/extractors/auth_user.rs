@@ -29,7 +29,7 @@ pub async fn resolve_auth_user(
 
     Ok(AuthUser {
         user_id,
-        role: user.role,
+        role: user.role(),
         session_id,
     })
 }

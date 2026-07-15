@@ -121,12 +121,12 @@ impl<W: WorkshopRepository, C: CategoryRepository, L: LevelRepository, E: EventS
             input.level_id,
             input.created_by,
         );
-        workshop.description = input.description;
-        workshop.location = input.location;
-        workshop.start_date = input.start_date;
-        workshop.end_date = input.end_date;
-        workshop.max_seats = input.max_seats;
-        workshop.min_age = input.min_age;
+        workshop.set_description(input.description);
+        workshop.set_location(input.location);
+        workshop.set_start_date(input.start_date);
+        workshop.set_end_date(input.end_date);
+        workshop.set_max_seats(input.max_seats);
+        workshop.set_min_age(input.min_age);
 
         self.repo.create(&workshop).await?;
         self.publish_event(event).await?;
@@ -167,19 +167,19 @@ impl<W: WorkshopRepository, C: CategoryRepository, L: LevelRepository, E: EventS
             .ok_or_else(|| ApplicationError::not_found("Workshop", input.id))?;
 
         if let Some(title) = input.title {
-            workshop.title = title;
+            workshop.set_title(title);
         }
         if let Some(slug) = input.slug {
-            workshop.slug = slug;
+            workshop.set_slug(slug);
         }
         if let Some(description) = input.description {
-            workshop.description = Some(description);
+            workshop.set_description(Some(description));
         }
         if let Some(location) = input.location {
-            workshop.location = Some(location);
+            workshop.set_location(Some(location));
         }
         if let Some(price_cents) = input.price_cents {
-            workshop.price_cents = price_cents;
+            workshop.set_price_cents(price_cents);
         }
         if let Some(category_id) = input.category_id {
             let _category = self
@@ -187,7 +187,7 @@ impl<W: WorkshopRepository, C: CategoryRepository, L: LevelRepository, E: EventS
                 .find_by_id(category_id)
                 .await?
                 .ok_or_else(|| ApplicationError::not_found("Category", category_id))?;
-            workshop.category_id = category_id;
+            workshop.set_category_id(category_id);
         }
         if let Some(level_id) = input.level_id {
             let _level = self
@@ -195,22 +195,22 @@ impl<W: WorkshopRepository, C: CategoryRepository, L: LevelRepository, E: EventS
                 .find_by_id(level_id)
                 .await?
                 .ok_or_else(|| ApplicationError::not_found("Level", level_id))?;
-            workshop.level_id = level_id;
+            workshop.set_level_id(level_id);
         }
         if let Some(start_date) = input.start_date {
-            workshop.start_date = start_date;
+            workshop.set_start_date(start_date);
         }
         if let Some(end_date) = input.end_date {
-            workshop.end_date = end_date;
+            workshop.set_end_date(end_date);
         }
         if let Some(max_seats) = input.max_seats {
-            workshop.max_seats = max_seats;
+            workshop.set_max_seats(max_seats);
         }
         if let Some(min_age) = input.min_age {
-            workshop.min_age = min_age;
+            workshop.set_min_age(min_age);
         }
 
-        workshop.updated_at = chrono::Utc::now();
+        workshop.touch();
         self.repo.update(&workshop).await?;
         self.publish_event(DomainEvent::WorkshopUpdated {
             workshop_id: input.id,

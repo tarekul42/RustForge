@@ -1,5 +1,5 @@
 use crate::events::DomainEvent;
-use crate::value_objects::ids::{EnrollmentId, UserId, WorkshopId};
+use crate::value_objects::ids::{EnrollmentId, PaymentId, UserId, WorkshopId};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -46,21 +46,21 @@ impl EnrollmentStatus {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Enrollment {
     /// Unique identifier for this enrollment.
-    pub id: EnrollmentId,
+    pub(crate) id: EnrollmentId,
     /// The user who enrolled.
-    pub user_id: UserId,
+    pub(crate) user_id: UserId,
     /// The workshop being enrolled in.
-    pub workshop_id: WorkshopId,
+    pub(crate) workshop_id: WorkshopId,
     /// Optional payment associated with this enrollment.
-    pub payment_id: Option<crate::value_objects::ids::PaymentId>,
+    pub(crate) payment_id: Option<PaymentId>,
     /// Number of students covered by this enrollment (1 for individual).
-    pub student_count: i32,
+    pub(crate) student_count: i32,
     /// Current lifecycle status.
-    pub status: EnrollmentStatus,
+    pub(crate) status: EnrollmentStatus,
     /// Timestamp of creation.
-    pub created_at: DateTime<Utc>,
+    pub(crate) created_at: DateTime<Utc>,
     /// Timestamp of the last update.
-    pub updated_at: DateTime<Utc>,
+    pub(crate) updated_at: DateTime<Utc>,
 }
 
 impl Enrollment {
@@ -165,6 +165,80 @@ impl Enrollment {
                 self.status.as_str(),
                 "failed",
             )),
+        }
+    }
+
+    // --- Getters ---
+
+    /// Unique identifier for this enrollment.
+    pub fn id(&self) -> EnrollmentId {
+        self.id
+    }
+
+    /// The user who enrolled.
+    pub fn user_id(&self) -> UserId {
+        self.user_id
+    }
+
+    /// The workshop being enrolled in.
+    pub fn workshop_id(&self) -> WorkshopId {
+        self.workshop_id
+    }
+
+    /// Optional payment associated with this enrollment.
+    pub fn payment_id(&self) -> Option<PaymentId> {
+        self.payment_id
+    }
+
+    /// Number of students covered by this enrollment.
+    pub fn student_count(&self) -> i32 {
+        self.student_count
+    }
+
+    /// Current lifecycle status.
+    pub fn status(&self) -> EnrollmentStatus {
+        self.status
+    }
+
+    /// Timestamp of creation.
+    pub fn created_at(&self) -> &DateTime<Utc> {
+        &self.created_at
+    }
+
+    /// Timestamp of the last update.
+    pub fn updated_at(&self) -> &DateTime<Utc> {
+        &self.updated_at
+    }
+
+    // --- Setters ---
+
+    /// Set the payment associated with this enrollment.
+    pub fn set_payment_id(&mut self, payment_id: Option<PaymentId>) {
+        self.payment_id = payment_id;
+    }
+}
+
+impl Enrollment {
+    /// Restore an enrollment from persisted data (used by infrastructure repos).
+    pub fn from_parts(
+        id: EnrollmentId,
+        user_id: UserId,
+        workshop_id: WorkshopId,
+        payment_id: Option<PaymentId>,
+        student_count: i32,
+        status: EnrollmentStatus,
+        created_at: DateTime<Utc>,
+        updated_at: DateTime<Utc>,
+    ) -> Self {
+        Self {
+            id,
+            user_id,
+            workshop_id,
+            payment_id,
+            student_count,
+            status,
+            created_at,
+            updated_at,
         }
     }
 }

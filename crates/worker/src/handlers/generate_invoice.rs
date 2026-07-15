@@ -61,41 +61,41 @@ pub async fn handle_generate_invoice(
             ))
         })?;
 
-    if let Some(ref url) = payment.invoice_url {
+    if let Some(ref url) = payment.invoice_url() {
         tracing::info!(%parsed.payment_id, invoice_url = %url, "Invoice already exists, skipping");
-        return Err(InvoiceError::AlreadyExists(url.clone()));
+        return Err(InvoiceError::AlreadyExists(url.to_string()));
     }
 
     // --- Load related data ---
     let enrollment = enrollment_repo
-        .find_by_id(payment.enrollment_id)
+        .find_by_id(payment.enrollment_id())
         .await?
         .ok_or_else(|| {
-            DomainError::infrastructure(format!("enrollment {} not found", payment.enrollment_id))
+            DomainError::infrastructure(format!("enrollment {} not found", payment.enrollment_id()))
         })?;
 
     let user = user_repo
-        .find_by_id(enrollment.user_id)
+        .find_by_id(enrollment.user_id())
         .await?
         .ok_or_else(|| {
-            DomainError::infrastructure(format!("user {} not found", enrollment.user_id))
+            DomainError::infrastructure(format!("user {} not found", enrollment.user_id()))
         })?;
 
     let workshop = workshop_repo
-        .find_by_id(enrollment.workshop_id)
+        .find_by_id(enrollment.workshop_id())
         .await?
         .ok_or_else(|| {
-            DomainError::infrastructure(format!("workshop {} not found", enrollment.workshop_id))
+            DomainError::infrastructure(format!("workshop {} not found", enrollment.workshop_id()))
         })?;
 
     // --- Generate PDF (CPU-bound, offload to blocking pool) ---
     let invoice_data = InvoiceData {
-        transaction_id: payment.transaction_id.clone(),
-        payment_id: payment.id,
-        user_name: user.name.clone(),
-        user_email: user.email.to_string(),
-        workshop_title: workshop.title.clone(),
-        amount: payment.amount,
+        transaction_id: payment.transaction_id().to_string(),
+        payment_id: payment.id(),
+        user_name: user.name().to_string(),
+        user_email: user.email().to_string(),
+        workshop_title: workshop.title().to_string(),
+        amount: payment.amount(),
     };
 
     let pdf_bytes = tokio::task::spawn_blocking(move || pdf::generate_invoice(&invoice_data))
@@ -104,19 +104,19 @@ pub async fn handle_generate_invoice(
         .map_err(InvoiceError::from)?;
 
     // --- Upload to S3 ---
-    let key = format!("invoices/{}.pdf", payment.transaction_id);
+    let key = format!("invoices/{}.pdf", payment.transaction_id());
     let invoice_url = object_store
         .upload(invoices_bucket, &key, &pdf_bytes, "application/pdf")
         .await?;
 
     // --- Update payment.invoice_url ---
     let mut payment = payment;
-    payment.invoice_url = Some(invoice_url.clone());
-    payment.updated_at = chrono::Utc::now();
+    payment.set_invoice_url(Some(invoice_url.clone()));
+    payment.touch();
     payment_repo.update(&payment).await?;
 
     tracing::info!(
-        payment_id = %payment.id,
+        payment_id = %payment.id(),
         invoice_url = %invoice_url,
         bucket = %invoices_bucket,
         "Invoice uploaded and payment updated"
@@ -124,14 +124,14 @@ pub async fn handle_generate_invoice(
 
     // --- Enqueue follow-up email ---
     let email_payload = serde_json::json!({
-        "to": user.email,
-        "subject": format!("Invoice for {}", workshop.title),
+        "to": user.email(),
+        "subject": format!("Invoice for {}", workshop.title()),
         "template": "invoice",
         "context": {
-            "user_name": user.name,
-            "workshop_title": workshop.title,
-            "transaction_id": payment.transaction_id,
-            "amount": format!("{:.2}", payment.amount.cents() as f64 / 100.0),
+            "user_name": user.name(),
+            "workshop_title": workshop.title(),
+            "transaction_id": payment.transaction_id(),
+            "amount": format!("{:.2}", payment.amount().cents() as f64 / 100.0),
             "invoice_url": invoice_url,
         },
     });

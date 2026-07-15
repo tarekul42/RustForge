@@ -8,21 +8,21 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Contact {
     /// Unique identifier for this contact record.
-    pub id: ContactId,
+    pub(crate) id: ContactId,
     /// The submitter's full name (max 100 chars).
-    pub name: String,
+    pub(crate) name: String,
     /// The submitter's email address.
-    pub email: Email,
+    pub(crate) email: Email,
     /// Subject line (max 200 chars).
-    pub subject: String,
+    pub(crate) subject: String,
     /// Message body (max 5000 chars).
-    pub message: String,
+    pub(crate) message: String,
     /// Whether an admin has read this submission.
-    pub is_read: bool,
+    pub(crate) is_read: bool,
     /// Timestamp of creation.
-    pub created_at: DateTime<Utc>,
+    pub(crate) created_at: DateTime<Utc>,
     /// Timestamp of the last update.
-    pub updated_at: DateTime<Utc>,
+    pub(crate) updated_at: DateTime<Utc>,
 }
 
 impl Contact {
@@ -72,6 +72,71 @@ impl Contact {
     pub fn mark_read(&mut self) {
         self.is_read = true;
         self.updated_at = Utc::now();
+    }
+
+    /// Unique identifier for this contact record.
+    pub fn id(&self) -> ContactId {
+        self.id
+    }
+
+    /// The submitter's full name.
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// The submitter's email address.
+    pub fn email(&self) -> &Email {
+        &self.email
+    }
+
+    /// Subject line.
+    pub fn subject(&self) -> &str {
+        &self.subject
+    }
+
+    /// Message body.
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+
+    /// Whether an admin has read this submission.
+    pub fn is_read(&self) -> bool {
+        self.is_read
+    }
+
+    /// Timestamp of creation.
+    pub fn created_at(&self) -> &DateTime<Utc> {
+        &self.created_at
+    }
+
+    /// Timestamp of the last update.
+    pub fn updated_at(&self) -> &DateTime<Utc> {
+        &self.updated_at
+    }
+}
+
+impl Contact {
+    /// Restore a contact from persisted data (used by infrastructure repos).
+    pub fn from_parts(
+        id: ContactId,
+        name: String,
+        email: Email,
+        subject: String,
+        message: String,
+        is_read: bool,
+        created_at: DateTime<Utc>,
+        updated_at: DateTime<Utc>,
+    ) -> Self {
+        Self {
+            id,
+            name,
+            email,
+            subject,
+            message,
+            is_read,
+            created_at,
+            updated_at,
+        }
     }
 }
 

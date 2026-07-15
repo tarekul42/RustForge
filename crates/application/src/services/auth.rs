@@ -83,7 +83,7 @@ impl<U: UserRepository, S: SessionRepository, O: OtpRepository, J: JobRepository
         let session_expires_at = chrono::Utc::now() + chrono::Duration::days(7);
 
         self.session_repo
-            .create(session_id, user.id, &token_hash, &session_expires_at)
+            .create(session_id, user.id(), &token_hash, &session_expires_at)
             .await?;
 
         Ok(AuthResult {
@@ -103,11 +103,11 @@ impl<U: UserRepository, S: SessionRepository, O: OtpRepository, J: JobRepository
             .await?
             .ok_or_else(|| ApplicationError::unauthorized("Invalid email or password"))?;
 
-        let password_hash = user.password_hash.as_ref().ok_or_else(|| {
+        let password_hash = user.password_hash().ok_or_else(|| {
             ApplicationError::unauthorized("Cannot log in with OAuth-only account")
         })?;
 
-        let hash = password_hash.clone();
+        let hash = password_hash.to_string();
         let pwd = password.to_string();
         let valid = tokio::task::spawn_blocking(move || crypto::verify_password(&pwd, &hash))
             .await
@@ -118,13 +118,13 @@ impl<U: UserRepository, S: SessionRepository, O: OtpRepository, J: JobRepository
             return Err(ApplicationError::unauthorized("Invalid email or password"));
         }
 
-        if !user.is_verified {
+        if !user.is_verified() {
             return Err(ApplicationError::unauthorized(
                 "Email not verified. Please verify via OTP.",
             ));
         }
 
-        if user.status != UserStatus::Active {
+        if user.status() != UserStatus::Active {
             return Err(ApplicationError::unauthorized("Account is not active"));
         }
 
@@ -134,7 +134,7 @@ impl<U: UserRepository, S: SessionRepository, O: OtpRepository, J: JobRepository
         let session_expires_at = chrono::Utc::now() + chrono::Duration::days(7);
 
         self.session_repo
-            .create(session_id, user.id, &token_hash, &session_expires_at)
+            .create(session_id, user.id(), &token_hash, &session_expires_at)
             .await?;
 
         Ok(AuthResult {
@@ -193,12 +193,12 @@ impl<U: UserRepository, S: SessionRepository, O: OtpRepository, J: JobRepository
             .ok_or_else(|| ApplicationError::not_found("User", user_id))?;
 
         if let Some(name) = display_name {
-            user.name = name.to_string();
+            user.set_name(name.to_string());
         }
         if let Some(url) = picture_url {
-            user.picture_url = Some(url.to_string());
+            user.set_picture_url(Some(url.to_string()));
         }
-        user.updated_at = chrono::Utc::now();
+        user.touch();
 
         self.user_repo.update(&user).await?;
         Ok(user)
@@ -220,7 +220,7 @@ impl<U: UserRepository, S: SessionRepository, O: OtpRepository, J: JobRepository
         self.otp_repo.create(email, &code_hash, &expires_at).await?;
 
         let payload = serde_json::json!({
-            "to": user.email,
+            "to": user.email(),
             "subject": "Your OTP Code",
             "template": "otp",
             "context": {
@@ -270,8 +270,8 @@ impl<U: UserRepository, S: SessionRepository, O: OtpRepository, J: JobRepository
             .await?
             .ok_or_else(|| ApplicationError::not_found("User", email))?;
 
-        user.is_verified = true;
-        user.updated_at = chrono::Utc::now();
+        user.set_is_verified(true);
+        user.touch();
         self.user_repo.update(&user).await?;
 
         self.otp_repo.delete(email).await?;

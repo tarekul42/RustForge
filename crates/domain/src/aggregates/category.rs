@@ -7,19 +7,19 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Category {
     /// Unique identifier for this category.
-    pub id: CategoryId,
+    pub(crate) id: CategoryId,
     /// Human-readable name.
-    pub name: String,
+    pub(crate) name: String,
     /// URL-safe unique slug.
-    pub slug: String,
+    pub(crate) slug: String,
     /// Optional description of the category.
-    pub description: Option<String>,
+    pub(crate) description: Option<String>,
     /// Optional URL to a thumbnail image.
-    pub thumbnail_url: Option<String>,
+    pub(crate) thumbnail_url: Option<String>,
     /// Timestamp of creation.
-    pub created_at: DateTime<Utc>,
+    pub(crate) created_at: DateTime<Utc>,
     /// Timestamp of the last update.
-    pub updated_at: DateTime<Utc>,
+    pub(crate) updated_at: DateTime<Utc>,
 }
 
 impl Category {
@@ -67,6 +67,64 @@ impl Category {
         self.updated_at = Utc::now();
         DomainEvent::CategoryUpdated {
             category_id: self.id,
+        }
+    }
+
+    /// Unique identifier for this category.
+    pub fn id(&self) -> CategoryId {
+        self.id
+    }
+
+    /// Human-readable name.
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// URL-safe unique slug.
+    pub fn slug(&self) -> &str {
+        &self.slug
+    }
+
+    /// Optional description of the category.
+    pub fn description(&self) -> Option<&str> {
+        self.description.as_deref()
+    }
+
+    /// Optional URL to a thumbnail image.
+    pub fn thumbnail_url(&self) -> Option<&str> {
+        self.thumbnail_url.as_deref()
+    }
+
+    /// Timestamp of creation.
+    pub fn created_at(&self) -> &DateTime<Utc> {
+        &self.created_at
+    }
+
+    /// Timestamp of the last update.
+    pub fn updated_at(&self) -> &DateTime<Utc> {
+        &self.updated_at
+    }
+}
+
+impl Category {
+    /// Restore a category from persisted data (used by infrastructure repos).
+    pub fn from_parts(
+        id: CategoryId,
+        name: String,
+        slug: String,
+        description: Option<String>,
+        thumbnail_url: Option<String>,
+        created_at: DateTime<Utc>,
+        updated_at: DateTime<Utc>,
+    ) -> Self {
+        Self {
+            id,
+            name,
+            slug,
+            description,
+            thumbnail_url,
+            created_at,
+            updated_at,
         }
     }
 }

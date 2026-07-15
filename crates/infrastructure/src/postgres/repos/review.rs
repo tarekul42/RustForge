@@ -21,15 +21,15 @@ impl ReviewRepository for PostgresReviewRepository {
         sqlx::query!(
             r#"INSERT INTO reviews (id, user_id, workshop_id, rating, title, content, status, created_at, updated_at)
                VALUES ($1, $2, $3, $4, $5, $6, $7::text::review_status, $8, $9)"#,
-            review.id.into_uuid(),
-            review.user_id.into_uuid(),
-            review.workshop_id.into_uuid(),
-            review.rating,
-            review.title,
-            review.content,
-            review.status.as_str(),
-            review.created_at,
-            review.updated_at,
+            review.id().into_uuid(),
+            review.user_id().into_uuid(),
+            review.workshop_id().into_uuid(),
+            review.rating(),
+            review.title(),
+            review.content(),
+            review.status().as_str(),
+            review.created_at(),
+            review.updated_at(),
         )
         .execute(&self.pool)
         .await
@@ -86,12 +86,12 @@ impl ReviewRepository for PostgresReviewRepository {
         sqlx::query!(
             r#"UPDATE reviews SET rating = $2, title = $3, content = $4, status = $5::text::review_status, updated_at = $6
                WHERE id = $1"#,
-            review.id.into_uuid(),
-            review.rating,
-            review.title,
-            review.content,
-            review.status.as_str(),
-            review.updated_at,
+            review.id().into_uuid(),
+            review.rating(),
+            review.title(),
+            review.content(),
+            review.status().as_str(),
+            review.updated_at(),
         )
         .execute(&self.pool)
         .await
@@ -126,16 +126,16 @@ impl ReviewRow {
         let status = ReviewStatus::from_str(&self.status).ok_or_else(|| {
             DomainError::infrastructure(format!("invalid review status: {}", self.status))
         })?;
-        Ok(Review {
-            id: ReviewId::from_uuid(self.id),
-            user_id: UserId::from_uuid(self.user_id),
-            workshop_id: WorkshopId::from_uuid(self.workshop_id),
-            rating: self.rating,
-            title: self.title,
-            content: self.content,
+        Ok(Review::from_parts(
+            ReviewId::from_uuid(self.id),
+            UserId::from_uuid(self.user_id),
+            WorkshopId::from_uuid(self.workshop_id),
+            self.rating,
+            self.title,
+            self.content,
             status,
-            created_at: self.created_at,
-            updated_at: self.updated_at,
-        })
+            self.created_at,
+            self.updated_at,
+        ))
     }
 }

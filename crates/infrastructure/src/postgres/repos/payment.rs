@@ -23,15 +23,15 @@ impl PaymentRepository for PostgresPaymentRepository {
             r#"INSERT INTO payments (id, enrollment_id, transaction_id, amount_cents,
                payment_gateway_data, invoice_url, status, created_at, updated_at)
                VALUES ($1, $2, $3, $4, $5, $6, $7::text::payment_status, $8, $9)"#,
-            payment.id.into_uuid(),
-            payment.enrollment_id.into_uuid(),
-            payment.transaction_id,
-            payment.amount.cents(),
-            payment.payment_gateway_data,
-            payment.invoice_url,
-            payment.status.as_str(),
-            payment.created_at,
-            payment.updated_at,
+            payment.id().into_uuid(),
+            payment.enrollment_id().into_uuid(),
+            payment.transaction_id(),
+            payment.amount().cents(),
+            payment.payment_gateway_data().cloned(),
+            payment.invoice_url(),
+            payment.status().as_str(),
+            payment.created_at(),
+            payment.updated_at(),
         )
         .execute(&self.pool)
         .await
@@ -126,12 +126,12 @@ impl PaymentRepository for PostgresPaymentRepository {
             r#"UPDATE payments SET amount_cents = $2, payment_gateway_data = $3,
                invoice_url = $4, status = $5::text::payment_status, updated_at = $6
                WHERE id = $1"#,
-            payment.id.into_uuid(),
-            payment.amount.cents(),
-            payment.payment_gateway_data,
-            payment.invoice_url,
-            payment.status.as_str(),
-            payment.updated_at,
+            payment.id().into_uuid(),
+            payment.amount().cents(),
+            payment.payment_gateway_data().cloned(),
+            payment.invoice_url(),
+            payment.status().as_str(),
+            payment.updated_at(),
         )
         .execute(&self.pool)
         .await
@@ -158,16 +158,16 @@ impl PaymentRow {
         let status = PaymentStatus::from_str(&self.status).ok_or_else(|| {
             DomainError::infrastructure(format!("invalid payment status: {}", self.status))
         })?;
-        Ok(Payment {
-            id: PaymentId::from_uuid(self.id),
-            enrollment_id: EnrollmentId::from_uuid(self.enrollment_id),
-            transaction_id: self.transaction_id,
-            amount: Money::from_cents(self.amount_cents),
-            payment_gateway_data: self.payment_gateway_data,
-            invoice_url: self.invoice_url,
+        Ok(Payment::from_parts(
+            PaymentId::from_uuid(self.id),
+            EnrollmentId::from_uuid(self.enrollment_id),
+            self.transaction_id,
+            Money::from_cents(self.amount_cents),
+            self.payment_gateway_data,
+            self.invoice_url,
             status,
-            created_at: self.created_at,
-            updated_at: self.updated_at,
-        })
+            self.created_at,
+            self.updated_at,
+        ))
     }
 }

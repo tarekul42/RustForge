@@ -32,10 +32,10 @@ struct LevelResponse {
 impl From<sw_domain::aggregates::level::Level> for LevelResponse {
     fn from(l: sw_domain::aggregates::level::Level) -> Self {
         Self {
-            id: l.id.to_string(),
-            name: l.name,
-            created_at: l.created_at.to_rfc3339(),
-            updated_at: l.updated_at.to_rfc3339(),
+            id: l.id().to_string(),
+            name: l.name().to_string(),
+            created_at: l.created_at().to_rfc3339(),
+            updated_at: l.updated_at().to_rfc3339(),
         }
     }
 }

@@ -83,14 +83,14 @@ async fn success_get(
         .await?;
 
     Ok(Json(PaymentResponse {
-        id: payment.id.to_string(),
-        enrollment_id: payment.enrollment_id.to_string(),
-        transaction_id: payment.transaction_id,
-        amount_cents: payment.amount.cents(),
-        status: payment.status.as_str().to_string(),
-        invoice_url: payment.invoice_url,
-        created_at: payment.created_at.to_rfc3339(),
-        updated_at: payment.updated_at.to_rfc3339(),
+        id: payment.id().to_string(),
+        enrollment_id: payment.enrollment_id().to_string(),
+        transaction_id: payment.transaction_id().to_string(),
+        amount_cents: payment.amount().cents(),
+        status: payment.status().as_str().to_string(),
+        invoice_url: payment.invoice_url().map(|s| s.to_string()),
+        created_at: payment.created_at().to_rfc3339(),
+        updated_at: payment.updated_at().to_rfc3339(),
     }))
 }
 
@@ -112,14 +112,14 @@ async fn fail_get(
     let payment = state.payment_service.fail_payment(&transaction_id).await?;
 
     Ok(Json(PaymentResponse {
-        id: payment.id.to_string(),
-        enrollment_id: payment.enrollment_id.to_string(),
-        transaction_id: payment.transaction_id,
-        amount_cents: payment.amount.cents(),
-        status: payment.status.as_str().to_string(),
-        invoice_url: payment.invoice_url,
-        created_at: payment.created_at.to_rfc3339(),
-        updated_at: payment.updated_at.to_rfc3339(),
+        id: payment.id().to_string(),
+        enrollment_id: payment.enrollment_id().to_string(),
+        transaction_id: payment.transaction_id().to_string(),
+        amount_cents: payment.amount().cents(),
+        status: payment.status().as_str().to_string(),
+        invoice_url: payment.invoice_url().map(|s| s.to_string()),
+        created_at: payment.created_at().to_rfc3339(),
+        updated_at: payment.updated_at().to_rfc3339(),
     }))
 }
 
@@ -144,14 +144,14 @@ async fn cancel_get(
         .await?;
 
     Ok(Json(PaymentResponse {
-        id: payment.id.to_string(),
-        enrollment_id: payment.enrollment_id.to_string(),
-        transaction_id: payment.transaction_id,
-        amount_cents: payment.amount.cents(),
-        status: payment.status.as_str().to_string(),
-        invoice_url: payment.invoice_url,
-        created_at: payment.created_at.to_rfc3339(),
-        updated_at: payment.updated_at.to_rfc3339(),
+        id: payment.id().to_string(),
+        enrollment_id: payment.enrollment_id().to_string(),
+        transaction_id: payment.transaction_id().to_string(),
+        amount_cents: payment.amount().cents(),
+        status: payment.status().as_str().to_string(),
+        invoice_url: payment.invoice_url().map(|s| s.to_string()),
+        created_at: payment.created_at().to_rfc3339(),
+        updated_at: payment.updated_at().to_rfc3339(),
     }))
 }
 
@@ -183,7 +183,7 @@ async fn refund_handler(
     let user = state.auth_service.get_user(user_id).await?;
 
     if !matches!(
-        user.role,
+        user.role(),
         sw_domain::aggregates::user::UserRole::Admin
             | sw_domain::aggregates::user::UserRole::SuperAdmin
     ) {
@@ -201,14 +201,14 @@ async fn refund_handler(
         .await?;
 
     Ok(Json(PaymentResponse {
-        id: payment.id.to_string(),
-        enrollment_id: payment.enrollment_id.to_string(),
-        transaction_id: payment.transaction_id,
-        amount_cents: payment.amount.cents(),
-        status: payment.status.as_str().to_string(),
-        invoice_url: payment.invoice_url,
-        created_at: payment.created_at.to_rfc3339(),
-        updated_at: payment.updated_at.to_rfc3339(),
+        id: payment.id().to_string(),
+        enrollment_id: payment.enrollment_id().to_string(),
+        transaction_id: payment.transaction_id().to_string(),
+        amount_cents: payment.amount().cents(),
+        status: payment.status().as_str().to_string(),
+        invoice_url: payment.invoice_url().map(|s| s.to_string()),
+        created_at: payment.created_at().to_rfc3339(),
+        updated_at: payment.updated_at().to_rfc3339(),
     }))
 }
 
@@ -229,6 +229,6 @@ async fn get_invoice_url(
         .ok_or(ApiError::NotFound)?;
 
     Ok(Json(InvoiceResponse {
-        url: payment.invoice_url,
+        url: payment.invoice_url().map(|s| s.to_string()),
     }))
 }

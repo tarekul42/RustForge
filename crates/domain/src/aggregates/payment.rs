@@ -51,23 +51,23 @@ impl PaymentStatus {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Payment {
     /// Unique identifier for this payment.
-    pub id: PaymentId,
+    pub(crate) id: PaymentId,
     /// The enrollment this payment is for.
-    pub enrollment_id: EnrollmentId,
+    pub(crate) enrollment_id: EnrollmentId,
     /// External transaction ID from the payment gateway.
-    pub transaction_id: String,
+    pub(crate) transaction_id: String,
     /// Payment amount as a Money value.
-    pub amount: Money,
+    pub(crate) amount: Money,
     /// Raw response data from the payment gateway.
-    pub payment_gateway_data: Option<serde_json::Value>,
+    pub(crate) payment_gateway_data: Option<serde_json::Value>,
     /// URL to the generated invoice.
-    pub invoice_url: Option<String>,
+    pub(crate) invoice_url: Option<String>,
     /// Current lifecycle status.
-    pub status: PaymentStatus,
+    pub(crate) status: PaymentStatus,
     /// Timestamp of creation.
-    pub created_at: DateTime<Utc>,
+    pub(crate) created_at: DateTime<Utc>,
     /// Timestamp of the last update.
-    pub updated_at: DateTime<Utc>,
+    pub(crate) updated_at: DateTime<Utc>,
 }
 
 impl Payment {
@@ -181,6 +181,102 @@ impl Payment {
                 self.status.as_str(),
                 "refunded",
             )),
+        }
+    }
+
+    // --- Getters ---
+
+    /// Unique identifier for this payment.
+    pub fn id(&self) -> PaymentId {
+        self.id
+    }
+
+    /// The enrollment this payment is for.
+    pub fn enrollment_id(&self) -> EnrollmentId {
+        self.enrollment_id
+    }
+
+    /// External transaction ID from the payment gateway.
+    pub fn transaction_id(&self) -> &str {
+        &self.transaction_id
+    }
+
+    /// Payment amount.
+    pub fn amount(&self) -> Money {
+        self.amount
+    }
+
+    /// Raw response data from the payment gateway.
+    pub fn payment_gateway_data(&self) -> Option<&serde_json::Value> {
+        self.payment_gateway_data.as_ref()
+    }
+
+    /// URL to the generated invoice.
+    pub fn invoice_url(&self) -> Option<&str> {
+        self.invoice_url.as_deref()
+    }
+
+    /// Current lifecycle status.
+    pub fn status(&self) -> PaymentStatus {
+        self.status
+    }
+
+    /// Timestamp of creation.
+    pub fn created_at(&self) -> &DateTime<Utc> {
+        &self.created_at
+    }
+
+    /// Timestamp of the last update.
+    pub fn updated_at(&self) -> &DateTime<Utc> {
+        &self.updated_at
+    }
+
+    // --- Setters ---
+
+    /// Set the status.
+    pub fn set_status(&mut self, status: PaymentStatus) {
+        self.status = status;
+    }
+
+    /// Set the payment gateway data.
+    pub fn set_payment_gateway_data(&mut self, data: Option<serde_json::Value>) {
+        self.payment_gateway_data = data;
+    }
+
+    /// Set the invoice URL.
+    pub fn set_invoice_url(&mut self, url: Option<String>) {
+        self.invoice_url = url;
+    }
+
+    /// Set the updated_at timestamp to now.
+    pub fn touch(&mut self) {
+        self.updated_at = Utc::now();
+    }
+}
+
+impl Payment {
+    /// Restore a payment from persisted data (used by infrastructure repos).
+    pub fn from_parts(
+        id: PaymentId,
+        enrollment_id: EnrollmentId,
+        transaction_id: String,
+        amount: Money,
+        payment_gateway_data: Option<serde_json::Value>,
+        invoice_url: Option<String>,
+        status: PaymentStatus,
+        created_at: DateTime<Utc>,
+        updated_at: DateTime<Utc>,
+    ) -> Self {
+        Self {
+            id,
+            enrollment_id,
+            transaction_id,
+            amount,
+            payment_gateway_data,
+            invoice_url,
+            status,
+            created_at,
+            updated_at,
         }
     }
 }

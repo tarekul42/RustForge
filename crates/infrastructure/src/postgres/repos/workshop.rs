@@ -23,22 +23,22 @@ impl WorkshopRepository for PostgresWorkshopRepository {
                start_date, end_date, max_seats, current_enrollments, min_age,
                category_id, level_id, created_by, created_at, updated_at)
                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)"#,
-            workshop.id.into_uuid(),
-            workshop.title,
-            workshop.slug,
-            workshop.description,
-            workshop.location,
-            workshop.price_cents,
-            workshop.start_date,
-            workshop.end_date,
-            workshop.max_seats,
-            workshop.current_enrollments,
-            workshop.min_age,
-            workshop.category_id.into_uuid(),
-            workshop.level_id.into_uuid(),
-            workshop.created_by.into_uuid(),
-            workshop.created_at,
-            workshop.updated_at,
+            workshop.id().into_uuid(),
+            workshop.title(),
+            workshop.slug(),
+            workshop.description(),
+            workshop.location(),
+            workshop.price_cents(),
+            workshop.start_date(),
+            workshop.end_date(),
+            workshop.max_seats(),
+            workshop.current_enrollments(),
+            workshop.min_age(),
+            workshop.category_id().into_uuid(),
+            workshop.level_id().into_uuid(),
+            workshop.created_by().into_uuid(),
+            workshop.created_at(),
+            workshop.updated_at(),
         )
         .execute(&self.pool)
         .await
@@ -85,20 +85,20 @@ impl WorkshopRepository for PostgresWorkshopRepository {
                current_enrollments = $10, min_age = $11, category_id = $12, level_id = $13,
                updated_at = $14
                WHERE id = $1"#,
-            workshop.id.into_uuid(),
-            workshop.title,
-            workshop.slug,
-            workshop.description,
-            workshop.location,
-            workshop.price_cents,
-            workshop.start_date,
-            workshop.end_date,
-            workshop.max_seats,
-            workshop.current_enrollments,
-            workshop.min_age,
-            workshop.category_id.into_uuid(),
-            workshop.level_id.into_uuid(),
-            workshop.updated_at,
+            workshop.id().into_uuid(),
+            workshop.title(),
+            workshop.slug(),
+            workshop.description(),
+            workshop.location(),
+            workshop.price_cents(),
+            workshop.start_date(),
+            workshop.end_date(),
+            workshop.max_seats(),
+            workshop.current_enrollments(),
+            workshop.min_age(),
+            workshop.category_id().into_uuid(),
+            workshop.level_id().into_uuid(),
+            workshop.updated_at(),
         )
         .execute(&self.pool)
         .await
@@ -149,13 +149,13 @@ impl WorkshopRepository for PostgresWorkshopRepository {
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to add workshop image: {e}")))?;
-        Ok(WorkshopImage {
-            id: WorkshopImageId::from_uuid(id),
+        Ok(WorkshopImage::from_parts(
+            WorkshopImageId::from_uuid(id),
             workshop_id,
-            url: url.to_string(),
-            s3_key: s3_key.to_string(),
-            created_at: now,
-        })
+            url.to_string(),
+            s3_key.to_string(),
+            now,
+        ))
     }
 
     async fn remove_image(&self, image_id: WorkshopImageId) -> Result<(), DomainError> {
@@ -238,24 +238,24 @@ struct WorkshopRow {
 
 impl WorkshopRow {
     fn into_domain(self) -> Result<Workshop, DomainError> {
-        Ok(Workshop {
-            id: WorkshopId::from_uuid(self.id),
-            title: self.title,
-            slug: self.slug,
-            description: self.description,
-            location: self.location,
-            price_cents: self.price_cents,
-            start_date: self.start_date,
-            end_date: self.end_date,
-            max_seats: self.max_seats,
-            current_enrollments: self.current_enrollments,
-            min_age: self.min_age,
-            category_id: CategoryId::from_uuid(self.category_id),
-            level_id: LevelId::from_uuid(self.level_id),
-            created_by: UserId::from_uuid(self.created_by),
-            created_at: self.created_at,
-            updated_at: self.updated_at,
-        })
+        Ok(Workshop::from_parts(
+            WorkshopId::from_uuid(self.id),
+            self.title,
+            self.slug,
+            self.description,
+            self.location,
+            self.price_cents,
+            self.start_date,
+            self.end_date,
+            self.max_seats,
+            self.current_enrollments,
+            self.min_age,
+            CategoryId::from_uuid(self.category_id),
+            LevelId::from_uuid(self.level_id),
+            UserId::from_uuid(self.created_by),
+            self.created_at,
+            self.updated_at,
+        ))
     }
 }
 
@@ -270,12 +270,12 @@ struct WorkshopImageRow {
 
 impl WorkshopImageRow {
     fn into_domain(self) -> Result<WorkshopImage, DomainError> {
-        Ok(WorkshopImage {
-            id: WorkshopImageId::from_uuid(self.id),
-            workshop_id: WorkshopId::from_uuid(self.workshop_id),
-            url: self.url,
-            s3_key: self.s3_key,
-            created_at: self.created_at,
-        })
+        Ok(WorkshopImage::from_parts(
+            WorkshopImageId::from_uuid(self.id),
+            WorkshopId::from_uuid(self.workshop_id),
+            self.url,
+            self.s3_key,
+            self.created_at,
+        ))
     }
 }

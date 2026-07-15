@@ -115,13 +115,13 @@ async fn delete_contact(
 
 fn to_response(contact: &sw_domain::aggregates::contact::Contact) -> ContactResponse {
     ContactResponse {
-        id: contact.id.to_string(),
-        name: contact.name.clone(),
-        email: contact.email.to_string(),
-        subject: contact.subject.clone(),
-        message: contact.message.clone(),
-        is_read: contact.is_read,
-        created_at: contact.created_at.to_rfc3339(),
-        updated_at: contact.updated_at.to_rfc3339(),
+        id: contact.id().to_string(),
+        name: contact.name().to_string(),
+        email: contact.email().to_string(),
+        subject: contact.subject().to_string(),
+        message: contact.message().to_string(),
+        is_read: contact.is_read(),
+        created_at: contact.created_at().to_rfc3339(),
+        updated_at: contact.updated_at().to_rfc3339(),
     }
 }

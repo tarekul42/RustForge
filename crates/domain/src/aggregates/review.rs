@@ -42,23 +42,23 @@ impl ReviewStatus {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Review {
     /// Unique identifier for this review.
-    pub id: ReviewId,
+    pub(crate) id: ReviewId,
     /// The user who wrote the review.
-    pub user_id: UserId,
+    pub(crate) user_id: UserId,
     /// The workshop being reviewed.
-    pub workshop_id: WorkshopId,
+    pub(crate) workshop_id: WorkshopId,
     /// Rating from 1 to 5.
-    pub rating: i16,
+    pub(crate) rating: i16,
     /// Short title (max 120 characters).
-    pub title: String,
+    pub(crate) title: String,
     /// Full review text (max 2000 characters).
-    pub content: String,
+    pub(crate) content: String,
     /// Moderation status.
-    pub status: ReviewStatus,
+    pub(crate) status: ReviewStatus,
     /// Timestamp of creation.
-    pub created_at: DateTime<Utc>,
+    pub(crate) created_at: DateTime<Utc>,
     /// Timestamp of the last update.
-    pub updated_at: DateTime<Utc>,
+    pub(crate) updated_at: DateTime<Utc>,
 }
 
 impl Review {
@@ -147,6 +147,102 @@ impl Review {
                 self.status.as_str(),
                 "rejected",
             )),
+        }
+    }
+
+    // --- Getters ---
+
+    /// Unique identifier for this review.
+    pub fn id(&self) -> ReviewId {
+        self.id
+    }
+
+    /// The user who wrote the review.
+    pub fn user_id(&self) -> UserId {
+        self.user_id
+    }
+
+    /// The workshop being reviewed.
+    pub fn workshop_id(&self) -> WorkshopId {
+        self.workshop_id
+    }
+
+    /// Rating from 1 to 5.
+    pub fn rating(&self) -> i16 {
+        self.rating
+    }
+
+    /// Short title.
+    pub fn title(&self) -> &str {
+        &self.title
+    }
+
+    /// Full review text.
+    pub fn content(&self) -> &str {
+        &self.content
+    }
+
+    /// Moderation status.
+    pub fn status(&self) -> ReviewStatus {
+        self.status
+    }
+
+    /// Timestamp of creation.
+    pub fn created_at(&self) -> &DateTime<Utc> {
+        &self.created_at
+    }
+
+    /// Timestamp of the last update.
+    pub fn updated_at(&self) -> &DateTime<Utc> {
+        &self.updated_at
+    }
+
+    // --- Setters ---
+
+    /// Set the rating.
+    pub fn set_rating(&mut self, rating: i16) {
+        self.rating = rating;
+    }
+
+    /// Set the title.
+    pub fn set_title(&mut self, title: String) {
+        self.title = title;
+    }
+
+    /// Set the content.
+    pub fn set_content(&mut self, content: String) {
+        self.content = content;
+    }
+
+    /// Set the updated_at timestamp to now.
+    pub fn touch(&mut self) {
+        self.updated_at = Utc::now();
+    }
+}
+
+impl Review {
+    /// Restore a review from persisted data (used by infrastructure repos).
+    pub fn from_parts(
+        id: ReviewId,
+        user_id: UserId,
+        workshop_id: WorkshopId,
+        rating: i16,
+        title: String,
+        content: String,
+        status: ReviewStatus,
+        created_at: DateTime<Utc>,
+        updated_at: DateTime<Utc>,
+    ) -> Self {
+        Self {
+            id,
+            user_id,
+            workshop_id,
+            rating,
+            title,
+            content,
+            status,
+            created_at,
+            updated_at,
         }
     }
 }

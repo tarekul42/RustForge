@@ -79,7 +79,7 @@ impl<RR: ReviewRepository, ER: EnrollmentRepository, WR: WorkshopRepository, ES:
             .await?;
         let has_completed = enrollments.iter().any(|e| {
             matches!(
-                e.status,
+                e.status(),
                 sw_domain::aggregates::enrollment::EnrollmentStatus::Complete
             )
         });
@@ -139,7 +139,7 @@ impl<RR: ReviewRepository, ER: EnrollmentRepository, WR: WorkshopRepository, ES:
         if only_approved {
             Ok(reviews
                 .into_iter()
-                .filter(|r| r.status == ReviewStatus::Approved)
+                .filter(|r| r.status() == ReviewStatus::Approved)
                 .collect())
         } else {
             Ok(reviews)
@@ -185,7 +185,7 @@ impl<RR: ReviewRepository, ER: EnrollmentRepository, WR: WorkshopRepository, ES:
             .await?
             .ok_or_else(|| ApplicationError::not_found("Review", input.id))?;
 
-        if review.status != ReviewStatus::Pending {
+        if review.status() != ReviewStatus::Pending {
             return Err(ApplicationError::validation(
                 "Can only update a review while it is pending",
             ));
@@ -197,7 +197,7 @@ impl<RR: ReviewRepository, ER: EnrollmentRepository, WR: WorkshopRepository, ES:
                     "Rating must be between 1 and 5",
                 ));
             }
-            review.rating = rating;
+            review.set_rating(rating);
         }
         if let Some(title) = input.title {
             if title.len() > 120 {
@@ -205,7 +205,7 @@ impl<RR: ReviewRepository, ER: EnrollmentRepository, WR: WorkshopRepository, ES:
                     "Title must be 120 characters or less",
                 ));
             }
-            review.title = title;
+            review.set_title(title);
         }
         if let Some(content) = input.content {
             if content.len() > 2000 {
@@ -213,10 +213,10 @@ impl<RR: ReviewRepository, ER: EnrollmentRepository, WR: WorkshopRepository, ES:
                     "Content must be 2000 characters or less",
                 ));
             }
-            review.content = content;
+            review.set_content(content);
         }
 
-        review.updated_at = chrono::Utc::now();
+        review.touch();
         self.repo.update(&review).await?;
         Ok(review)
     }

@@ -111,7 +111,7 @@ impl<
             .await?;
         if existing.iter().any(|e| {
             matches!(
-                e.status,
+                e.status(),
                 EnrollmentStatus::Pending | EnrollmentStatus::Complete
             )
         }) {
@@ -130,11 +130,11 @@ impl<
             Enrollment::new(input.user_id, input.workshop_id, input.student_count);
 
         let transaction_id = format!("TXN-{}", uuid::Uuid::now_v7());
-        let price = Money::from_cents(workshop.price_cents);
+        let price = Money::from_cents(workshop.price_cents());
         let (mut payment, payment_event) =
-            Payment::new(enrollment.id, transaction_id.clone(), price);
+            Payment::new(enrollment.id(), transaction_id.clone(), price);
 
-        enrollment.payment_id = Some(payment.id);
+        enrollment.set_payment_id(Some(payment.id()));
 
         // Initialize gateway BEFORE any DB writes.
         // If this fails, the seat is released atomically and no DB state changed.
@@ -163,10 +163,10 @@ impl<
         };
 
         if let Some(gateway_url) = &init_result.gateway_url {
-            payment.payment_gateway_data = Some(serde_json::json!({
+            payment.set_payment_gateway_data(Some(serde_json::json!({
                 "gateway_url": gateway_url,
                 "session_key": init_result.session_key,
-            }));
+            })));
         }
 
         // All writes in a single transaction (or use repos directly when no pool is available, e.g. tests)
@@ -187,11 +187,11 @@ impl<
             if let Err(e) = sqlx::query!(
                 r#"INSERT INTO enrollments (id, user_id, workshop_id, payment_id, student_count, status, created_at, updated_at)
                    VALUES ($1, $2, $3, $4, $5, 'pending', NOW(), NOW())"#,
-                enrollment.id.into_uuid(),
-                enrollment.user_id.into_uuid(),
-                enrollment.workshop_id.into_uuid(),
-                enrollment.payment_id.map(|id| id.into_uuid()),
-                enrollment.student_count,
+                enrollment.id().into_uuid(),
+                enrollment.user_id().into_uuid(),
+                enrollment.workshop_id().into_uuid(),
+                enrollment.payment_id().map(|id| id.into_uuid()),
+                enrollment.student_count(),
             )
             .execute(&mut *tx)
             .await
@@ -204,11 +204,11 @@ impl<
             if let Err(e) = sqlx::query!(
                 r#"INSERT INTO payments (id, enrollment_id, transaction_id, amount_cents, payment_gateway_data, invoice_url, status, created_at, updated_at)
                    VALUES ($1, $2, $3, $4, $5, NULL, 'unpaid', NOW(), NOW())"#,
-                payment.id.into_uuid(),
-                payment.enrollment_id.into_uuid(),
-                payment.transaction_id,
-                payment.amount.cents(),
-                payment.payment_gateway_data,
+                payment.id().into_uuid(),
+                payment.enrollment_id().into_uuid(),
+                payment.transaction_id(),
+                payment.amount().cents(),
+                payment.payment_gateway_data(),
             )
             .execute(&mut *tx)
             .await
@@ -218,10 +218,10 @@ impl<
                 return Err(ApplicationError::internal(format!("failed to create payment: {e}")));
             }
 
-            if let Some(ref data) = payment.payment_gateway_data {
+            if let Some(data) = payment.payment_gateway_data() {
                 if let Err(e) = sqlx::query!(
                     "UPDATE payments SET payment_gateway_data = $2, updated_at = NOW() WHERE id = $1",
-                    payment.id.into_uuid(),
+                    payment.id().into_uuid(),
                     data,
                 )
                 .execute(&mut *tx)
@@ -258,7 +258,7 @@ impl<
             self.enrollment_repo.create(&enrollment).await?;
             self.payment_repo.create(&payment).await?;
             self.enrollment_repo.update(&enrollment).await?;
-            if payment.payment_gateway_data.is_some() {
+            if payment.payment_gateway_data().is_some() {
                 self.payment_repo.update(&payment).await?;
             }
             self.publish_event(enrollment_event).await?;
