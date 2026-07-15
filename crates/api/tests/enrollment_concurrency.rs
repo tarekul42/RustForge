@@ -40,10 +40,7 @@ async fn setup_pool() -> sqlx::PgPool {
 }
 
 /// Seed a user, category, and level; return a workshop with the given max seats.
-async fn create_test_workshop(
-    pool: &sqlx::PgPool,
-    max_seats: Option<i32>,
-) -> WorkshopId {
+async fn create_test_workshop(pool: &sqlx::PgPool, max_seats: Option<i32>) -> WorkshopId {
     let user_id = UserId::new();
     let category_id = CategoryId::new();
     let level_id = LevelId::new();

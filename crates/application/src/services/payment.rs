@@ -126,7 +126,11 @@ impl<
         if let Some(ref pool) = self.pool {
             let mut tx = match pool.begin().await {
                 Ok(tx) => tx,
-                Err(e) => return Err(ApplicationError::internal(format!("failed to begin transaction: {e}"))),
+                Err(e) => {
+                    return Err(ApplicationError::internal(format!(
+                        "failed to begin transaction: {e}"
+                    )));
+                }
             };
 
             let updated = sqlx::query_scalar::<_, bool>(
@@ -183,15 +187,23 @@ impl<
             }
 
             self.publish_event_in_tx(&mut tx, event).await?;
-            self.publish_event_in_tx(&mut tx, DomainEvent::PaymentStatusChanged {
-                payment_id: payment.id,
-                from: "unpaid",
-                to: "paid",
-            }).await?;
+            self.publish_event_in_tx(
+                &mut tx,
+                DomainEvent::PaymentStatusChanged {
+                    payment_id: payment.id,
+                    from: "unpaid",
+                    to: "paid",
+                },
+            )
+            .await?;
 
             match tx.commit().await {
                 Ok(_) => {}
-                Err(e) => return Err(ApplicationError::internal(format!("failed to commit transaction: {e}"))),
+                Err(e) => {
+                    return Err(ApplicationError::internal(format!(
+                        "failed to commit transaction: {e}"
+                    )));
+                }
             }
         } else {
             let updated = self
@@ -231,7 +243,8 @@ impl<
                 payment_id: payment.id,
                 from: "unpaid",
                 to: "paid",
-            }).await?;
+            })
+            .await?;
         }
 
         let invoice_payload = self.build_invoice_payload(&enrollment, &payment).await?;

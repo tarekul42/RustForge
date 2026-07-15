@@ -152,8 +152,13 @@ impl<
         {
             Ok(r) => r,
             Err(e) => {
-                let _ = self.workshop_repo.release_seat_atomic(input.workshop_id).await;
-                return Err(ApplicationError::internal(format!("Payment gateway init failed: {e}")));
+                let _ = self
+                    .workshop_repo
+                    .release_seat_atomic(input.workshop_id)
+                    .await;
+                return Err(ApplicationError::internal(format!(
+                    "Payment gateway init failed: {e}"
+                )));
             }
         };
 
@@ -169,8 +174,13 @@ impl<
             let mut tx = match pool.begin().await {
                 Ok(tx) => tx,
                 Err(e) => {
-                    let _ = self.workshop_repo.release_seat_atomic(input.workshop_id).await;
-                    return Err(ApplicationError::internal(format!("failed to begin transaction: {e}")));
+                    let _ = self
+                        .workshop_repo
+                        .release_seat_atomic(input.workshop_id)
+                        .await;
+                    return Err(ApplicationError::internal(format!(
+                        "failed to begin transaction: {e}"
+                    )));
                 }
             };
 
@@ -226,14 +236,22 @@ impl<
             for event in [enrollment_event, payment_event] {
                 if let Err(e) = self.publish_event_in_tx(&mut tx, event).await {
                     let _ = tx.rollback().await;
-                    let _ = self.workshop_repo.release_seat_atomic(input.workshop_id).await;
+                    let _ = self
+                        .workshop_repo
+                        .release_seat_atomic(input.workshop_id)
+                        .await;
                     return Err(e);
                 }
             }
 
             if let Err(e) = tx.commit().await {
-                let _ = self.workshop_repo.release_seat_atomic(input.workshop_id).await;
-                return Err(ApplicationError::internal(format!("failed to commit transaction: {e}")));
+                let _ = self
+                    .workshop_repo
+                    .release_seat_atomic(input.workshop_id)
+                    .await;
+                return Err(ApplicationError::internal(format!(
+                    "failed to commit transaction: {e}"
+                )));
             }
         } else {
             // Non-transactional path for tests with mock repos
