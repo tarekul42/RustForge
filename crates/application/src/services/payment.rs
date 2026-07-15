@@ -47,7 +47,7 @@ impl<
 {
     /// Create a new `PaymentService`.
     /// Create a new `PaymentService`.
-    #[allow(missing_docs)]
+    #[allow(missing_docs, clippy::too_many_arguments)]
     pub fn new(
         payment_repo: PR,
         enrollment_repo: ER,

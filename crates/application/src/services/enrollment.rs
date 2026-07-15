@@ -258,7 +258,7 @@ impl<
             self.enrollment_repo.create(&enrollment).await?;
             self.payment_repo.create(&payment).await?;
             self.enrollment_repo.update(&enrollment).await?;
-            if let Some(ref data) = payment.payment_gateway_data {
+            if payment.payment_gateway_data.is_some() {
                 self.payment_repo.update(&payment).await?;
             }
             self.publish_event(enrollment_event).await?;

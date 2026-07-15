@@ -394,6 +394,7 @@ async fn enrollment_create_success() {
         MockPaymentGateway {
             should_succeed: true,
         },
+        None,
     );
 
     let result = service
@@ -418,6 +419,7 @@ async fn enrollment_create_workshop_not_found() {
         MockPaymentGateway {
             should_succeed: true,
         },
+        None,
     );
 
     let err = service
@@ -479,6 +481,7 @@ async fn payment_success_cas_idempotent() {
         workshop_repo,
         MockJobRepo,
         MockRefundLogRepo,
+        None,
     );
 
     // First call should succeed
@@ -543,6 +546,7 @@ async fn refund_paid_payment_succeeds() {
         workshop_repo,
         MockJobRepo,
         MockRefundLogRepo,
+        None,
     );
 
     let result = service
@@ -581,6 +585,7 @@ async fn refund_unpaid_payment_fails() {
         MockWorkshopRepo::new(vec![workshop]),
         MockJobRepo,
         MockRefundLogRepo,
+        None,
     );
 
     let result = service.refund(payment_id, "Test".into()).await;
