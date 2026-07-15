@@ -61,7 +61,7 @@ async fn main() {
     let app = build_app(state);
 
     let addr = SocketAddr::new(
-        config.server.host.parse().expect("Invalid host address"),
+        config.server.host.parse().unwrap_or_else(|e| panic!("Invalid host address: {e}")),
         config.server.port,
     );
     let listener = TcpListener::bind(addr).await.unwrap_or_else(|e| {
@@ -88,12 +88,12 @@ async fn shutdown_signal() {
     let ctrl_c = async {
         signal::ctrl_c()
             .await
-            .expect("failed to install Ctrl+C handler");
+            .unwrap_or_else(|e| panic!("failed to install Ctrl+C handler: {e}"));
     };
 
     let terminate = async {
         signal::unix::signal(signal::unix::SignalKind::terminate())
-            .expect("failed to install SIGTERM handler")
+            .unwrap_or_else(|e| panic!("failed to install SIGTERM handler: {e}"))
             .recv()
             .await;
     };

@@ -331,7 +331,7 @@ impl Config {
             .merge(Toml::file("config/default.toml"))
             .merge(Env::prefixed("APP_").split("__"))
             .extract()
-            .expect("Failed to load configuration. Check config/default.toml and APP_* env vars.");
+            .unwrap_or_else(|e| panic!("Failed to load configuration. Check config/default.toml and APP_* env vars: {e}"));
 
         if let Err(errors) = config.validate() {
             panic!("Configuration validation failed: {errors}");

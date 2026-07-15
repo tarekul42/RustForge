@@ -13,7 +13,7 @@ static PROMETHEUS_HANDLE: OnceLock<PrometheusHandle> = OnceLock::new();
 pub fn init() {
     let handle = metrics_exporter_prometheus::PrometheusBuilder::new()
         .install_recorder()
-        .expect("Failed to install Prometheus metrics exporter");
+        .unwrap_or_else(|e| panic!("Failed to install Prometheus metrics exporter: {e}"));
     assert!(
         PROMETHEUS_HANDLE.set(handle).is_ok(),
         "metrics::init() called more than once"
@@ -28,7 +28,7 @@ pub fn init() {
 pub fn render() -> String {
     PROMETHEUS_HANDLE
         .get()
-        .expect("metrics::init() must be called before render()")
+        .unwrap_or_else(|| panic!("metrics::init() must be called before render()"))
         .render()
 }
 

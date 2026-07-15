@@ -44,7 +44,11 @@ pub async fn set_request_id(request: Request, next: Next) -> Response {
 
     response
         .headers_mut()
-        .insert("X-Request-Id", HeaderValue::from_str(&request_id).unwrap());
+        .insert(
+            "X-Request-Id",
+            HeaderValue::from_str(&request_id)
+                .unwrap_or_else(|_| HeaderValue::from_static("unknown")),
+        );
 
     response
 }

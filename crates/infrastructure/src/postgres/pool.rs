@@ -10,7 +10,11 @@ pub async fn create_pool(config: &DatabaseConfig) -> PgPool {
         .max_connections(config.max_connections)
         .connect(&config.url)
         .await
-        .expect("Failed to connect to PostgreSQL. Check DATABASE_URL or config/database.url.");
+        .unwrap_or_else(|e| {
+            panic!(
+                "Failed to connect to PostgreSQL. Check DATABASE_URL or config/database.url: {e}"
+            )
+        });
 
     // Set per-connection statement timeout.
     let timeout_ms = (config.statement_timeout_secs * 1000) as i64;
@@ -18,7 +22,7 @@ pub async fn create_pool(config: &DatabaseConfig) -> PgPool {
         .bind(timeout_ms)
         .execute(&pool)
         .await
-        .expect("Failed to set statement_timeout");
+        .unwrap_or_else(|e| panic!("Failed to set statement_timeout: {e}"));
 
     pool
 }

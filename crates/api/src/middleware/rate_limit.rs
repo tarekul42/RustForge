@@ -18,7 +18,7 @@ pub fn rate_limiter_layer<RespBody>()
     let config = Arc::new(
         b.use_headers()
             .finish()
-            .expect("invalid rate limiter config"),
+            .unwrap_or_else(|| panic!("invalid rate limiter config, check governor parameters")),
     );
     GovernorLayer::new(config)
 }

@@ -60,7 +60,7 @@ async fn main() {
 
     let pool = PgPool::connect(&config.database.url)
         .await
-        .expect("failed to connect to database");
+        .unwrap_or_else(|e| panic!("failed to connect to database: {e}"));
 
     let job_repo = Arc::new(PostgresJobRepository::new(pool.clone()));
     let queue = QueueService::new(
@@ -105,7 +105,8 @@ async fn main() {
     let worker_id = if config.worker.worker_id.is_empty() {
         uuid::Uuid::new_v4()
     } else {
-        uuid::Uuid::parse_str(&config.worker.worker_id).expect("invalid worker UUID in config")
+        uuid::Uuid::parse_str(&config.worker.worker_id)
+            .unwrap_or_else(|e| panic!("invalid worker UUID in config: {e}"))
     };
 
     let ctx = WorkerContext {
@@ -175,10 +176,10 @@ async fn run_worker(ctx: &WorkerContext) {
 
     #[cfg(unix)]
     let mut term_signal = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
-        .expect("failed to register SIGTERM handler");
+        .unwrap_or_else(|e| panic!("failed to register SIGTERM handler: {e}"));
     #[cfg(unix)]
     let mut int_signal = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())
-        .expect("failed to register SIGINT handler");
+        .unwrap_or_else(|e| panic!("failed to register SIGINT handler: {e}"));
 
     // Spawn periodic cleanup task
     let cleanup_pool = ctx.pool.clone();
