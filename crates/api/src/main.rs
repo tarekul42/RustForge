@@ -12,13 +12,28 @@ use tokio::net::TcpListener;
 use tokio::signal;
 use tracing::{error, info};
 
-/// Run a health check against the running server and exit.
+/// Run a health check and exit.
 /// Used by the Docker HEALTHCHECK directive.
-fn run_health_check() {
-    // Simple process-level health check: if we can load config and reach this
-    // point, the binary is functional. For a deeper check, the `/ready`
-    // endpoint also verifies DB and object store connectivity.
-    std::process::exit(0);
+async fn run_health_check() {
+    let database_url = match std::env::var("DATABASE_URL") {
+        Ok(url) => url,
+        Err(_) => std::process::exit(1),
+    };
+
+    let pool = match sqlx::postgres::PgPoolOptions::new()
+        .max_connections(1)
+        .acquire_timeout(Duration::from_secs(5))
+        .connect(&database_url)
+        .await
+    {
+        Ok(p) => p,
+        Err(_) => std::process::exit(1),
+    };
+
+    match sqlx::query("SELECT 1").execute(&pool).await {
+        Ok(_) => std::process::exit(0),
+        Err(_) => std::process::exit(1),
+    }
 }
 
 /// Application entry point.
@@ -29,7 +44,7 @@ fn run_health_check() {
 #[tokio::main]
 async fn main() {
     if std::env::args().any(|a| a == "--health-check") {
-        run_health_check();
+        run_health_check().await;
     }
 
     let config = Config::load();

@@ -18,4 +18,5 @@ chrono.workspace = true
 hex.workspace = true
 rand.workspace = true
 serde_json.workspace = true
+sqlx.workspace = true
 moka.workspace = true

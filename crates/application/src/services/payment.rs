@@ -30,6 +30,9 @@ pub struct PaymentService<
     refund_log_repo: RL,
     // Minimum allowed amount tolerance in BDT (0.5 BDT = 50 paisa).
     amount_tolerance_cents: i64,
+    /// Sqlx connection pool used for transactional writes.
+    /// `None` in tests (skips transactional wrapping).
+    pool: Option<sqlx::PgPool>,
 }
 
 impl<
@@ -43,6 +46,8 @@ impl<
 > PaymentService<PR, ER, ES, PG, WR, JR, RL>
 {
     /// Create a new `PaymentService`.
+    /// Create a new `PaymentService`.
+    #[allow(missing_docs)]
     pub fn new(
         payment_repo: PR,
         enrollment_repo: ER,
@@ -51,6 +56,7 @@ impl<
         workshop_repo: WR,
         job_repo: JR,
         refund_log_repo: RL,
+        pool: Option<sqlx::PgPool>,
     ) -> Self {
         Self {
             payment_repo,
@@ -60,7 +66,8 @@ impl<
             workshop_repo,
             job_repo,
             refund_log_repo,
-            amount_tolerance_cents: 50, // 0.5 BDT
+            amount_tolerance_cents: 50,
+            pool,
         }
     }
 
@@ -80,7 +87,7 @@ impl<
             .await
             .map_err(|e| ApplicationError::internal(format!("Failed to acquire lock: {e}")))?;
 
-        let payment = self
+        let mut payment = self
             .payment_repo
             .find_by_transaction_id(transaction_id)
             .await?
@@ -114,47 +121,118 @@ impl<
             }
         }
 
-        let updated = self
-            .payment_repo
-            .update_status_cas(payment.id, "unpaid", "paid")
-            .await?;
-        if !updated {
-            return Ok(payment);
+        let mut enrollment;
+
+        if let Some(ref pool) = self.pool {
+            let mut tx = match pool.begin().await {
+                Ok(tx) => tx,
+                Err(e) => return Err(ApplicationError::internal(format!("failed to begin transaction: {e}"))),
+            };
+
+            let updated = sqlx::query_scalar::<_, bool>(
+                "UPDATE payments SET status = 'paid', updated_at = NOW() WHERE id = $1 AND status = 'unpaid'",
+            )
+            .bind(payment.id.into_uuid())
+            .fetch_one(&mut *tx)
+            .await
+            .unwrap_or(false);
+
+            if !updated {
+                let _ = tx.rollback().await;
+                return Ok(payment);
+            }
+
+            payment.status = PaymentStatus::Paid;
+            payment.payment_gateway_data = Some(validation.raw_data);
+
+            if let Err(e) = sqlx::query(
+                "UPDATE payments SET payment_gateway_data = $2, status = 'paid', updated_at = NOW() WHERE id = $1",
+            )
+            .bind(payment.id.into_uuid())
+            .bind(&payment.payment_gateway_data)
+            .execute(&mut *tx)
+            .await
+            {
+                let _ = tx.rollback().await;
+                return Err(ApplicationError::internal(format!("failed to update payment: {e}")));
+            }
+
+            enrollment = self
+                .enrollment_repo
+                .find_by_id(payment.enrollment_id)
+                .await?
+                .ok_or_else(|| ApplicationError::not_found("Enrollment", payment.enrollment_id))?;
+
+            let event = enrollment
+                .complete()
+                .map_err(|e| ApplicationError::internal(e.to_string()))?;
+
+            let enrollment_updated = sqlx::query_scalar::<_, bool>(
+                "UPDATE enrollments SET status = 'complete', updated_at = NOW() WHERE id = $1 AND status = 'pending'",
+            )
+            .bind(enrollment.id.into_uuid())
+            .fetch_one(&mut *tx)
+            .await
+            .unwrap_or(false);
+
+            if !enrollment_updated {
+                let _ = tx.rollback().await;
+                return Err(ApplicationError::conflict(
+                    "Enrollment status changed before payment completion",
+                ));
+            }
+
+            self.publish_event_in_tx(&mut tx, event).await?;
+            self.publish_event_in_tx(&mut tx, DomainEvent::PaymentStatusChanged {
+                payment_id: payment.id,
+                from: "unpaid",
+                to: "paid",
+            }).await?;
+
+            match tx.commit().await {
+                Ok(_) => {}
+                Err(e) => return Err(ApplicationError::internal(format!("failed to commit transaction: {e}"))),
+            }
+        } else {
+            let updated = self
+                .payment_repo
+                .update_status_cas(payment.id, "unpaid", "paid")
+                .await?;
+            if !updated {
+                return Ok(payment);
+            }
+
+            payment.status = PaymentStatus::Paid;
+            payment.payment_gateway_data = Some(validation.raw_data);
+
+            enrollment = self
+                .enrollment_repo
+                .find_by_id(payment.enrollment_id)
+                .await?
+                .ok_or_else(|| ApplicationError::not_found("Enrollment", payment.enrollment_id))?;
+
+            let event = enrollment
+                .complete()
+                .map_err(|e| ApplicationError::internal(e.to_string()))?;
+
+            let enrollment_updated = self
+                .enrollment_repo
+                .update_status_cas(enrollment.id, "pending", enrollment.status.as_str())
+                .await?;
+            if !enrollment_updated {
+                return Err(ApplicationError::conflict(
+                    "Enrollment status changed before payment completion",
+                ));
+            }
+
+            self.payment_repo.update(&payment).await?;
+            self.publish_event(event).await?;
+            self.publish_event(DomainEvent::PaymentStatusChanged {
+                payment_id: payment.id,
+                from: "unpaid",
+                to: "paid",
+            }).await?;
         }
-
-        let mut payment = payment;
-        payment.status = PaymentStatus::Paid;
-        payment.payment_gateway_data = Some(validation.raw_data);
-
-        let enrollment = self
-            .enrollment_repo
-            .find_by_id(payment.enrollment_id)
-            .await?
-            .ok_or_else(|| ApplicationError::not_found("Enrollment", payment.enrollment_id))?;
-
-        let mut enrollment = enrollment;
-        let event = enrollment
-            .complete()
-            .map_err(|e| ApplicationError::internal(e.to_string()))?;
-
-        let enrollment_updated = self
-            .enrollment_repo
-            .update_status_cas(enrollment.id, "pending", enrollment.status.as_str())
-            .await?;
-        if !enrollment_updated {
-            return Err(ApplicationError::conflict(
-                "Enrollment status changed before payment completion",
-            ));
-        }
-
-        self.payment_repo.update(&payment).await?;
-        self.publish_event(event).await?;
-        self.publish_event(DomainEvent::PaymentStatusChanged {
-            payment_id: payment.id,
-            from: "unpaid",
-            to: "paid",
-        })
-        .await?;
 
         let invoice_payload = self.build_invoice_payload(&enrollment, &payment).await?;
         if let Err(e) = self
@@ -411,6 +489,30 @@ impl<
             .publish(&event, None)
             .await
             .map_err(|e| ApplicationError::internal(format!("failed to publish event: {e}")))
+    }
+
+    async fn publish_event_in_tx(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        event: DomainEvent,
+    ) -> Result<(), ApplicationError> {
+        let event_type = event.event_type();
+        let aggregate_type = event.aggregate_type();
+        let aggregate_id = super::enrollment::aggregate_id_from_event(&event);
+        let changes = serde_json::to_value(&event).unwrap_or_default();
+
+        sqlx::query(
+            r#"INSERT INTO audit_logs (event_type, aggregate_type, aggregate_id, actor_id, ip_address, user_agent, changes)
+               VALUES ($1, $2, $3, NULL, NULL::inet, NULL, $4)"#,
+        )
+        .bind(event_type)
+        .bind(aggregate_type)
+        .bind(aggregate_id)
+        .bind(changes)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| ApplicationError::internal(format!("failed to publish event: {e}")))?;
+        Ok(())
     }
 
     async fn build_invoice_payload(

@@ -157,6 +157,7 @@ impl AppState {
                 PostgresWorkshopRepository::new(pool.clone()),
                 event_store,
                 sslcommerz_client,
+                Some(pool.clone()),
             )),
             payment_service: Arc::new(PaymentService::new(
                 PostgresPaymentRepository::new(pool.clone()),
@@ -174,6 +175,7 @@ impl AppState {
                 PostgresWorkshopRepository::new(pool.clone()),
                 PostgresJobRepository::new(pool.clone()),
                 PostgresRefundLogRepository::new(pool.clone()),
+                Some(pool.clone()),
             )),
             review_service: Arc::new(ReviewService::new(
                 review_repo,
