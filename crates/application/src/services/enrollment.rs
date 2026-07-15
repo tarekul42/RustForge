@@ -184,15 +184,15 @@ impl<
                 }
             };
 
-            if let Err(e) = sqlx::query(
+            if let Err(e) = sqlx::query!(
                 r#"INSERT INTO enrollments (id, user_id, workshop_id, payment_id, student_count, status, created_at, updated_at)
                    VALUES ($1, $2, $3, $4, $5, 'pending', NOW(), NOW())"#,
+                enrollment.id.into_uuid(),
+                enrollment.user_id.into_uuid(),
+                enrollment.workshop_id.into_uuid(),
+                enrollment.payment_id.map(|id| id.into_uuid()),
+                enrollment.student_count,
             )
-            .bind(enrollment.id.into_uuid())
-            .bind(enrollment.user_id.into_uuid())
-            .bind(enrollment.workshop_id.into_uuid())
-            .bind(enrollment.payment_id.map(|id| id.into_uuid()))
-            .bind(enrollment.student_count)
             .execute(&mut *tx)
             .await
             {
@@ -201,15 +201,15 @@ impl<
                 return Err(ApplicationError::internal(format!("failed to create enrollment: {e}")));
             }
 
-            if let Err(e) = sqlx::query(
-                r#"INSERT INTO payments (id, enrollment_id, transaction_id, amount_cents, currency, payment_gateway_data, invoice_url, status, created_at, updated_at)
-                   VALUES ($1, $2, $3, $4, 'BDT', $5, NULL, 'unpaid', NOW(), NOW())"#,
+            if let Err(e) = sqlx::query!(
+                r#"INSERT INTO payments (id, enrollment_id, transaction_id, amount_cents, payment_gateway_data, invoice_url, status, created_at, updated_at)
+                   VALUES ($1, $2, $3, $4, $5, NULL, 'unpaid', NOW(), NOW())"#,
+                payment.id.into_uuid(),
+                payment.enrollment_id.into_uuid(),
+                payment.transaction_id,
+                payment.amount.cents(),
+                payment.payment_gateway_data,
             )
-            .bind(payment.id.into_uuid())
-            .bind(payment.enrollment_id.into_uuid())
-            .bind(&payment.transaction_id)
-            .bind(payment.amount.cents())
-            .bind(&payment.payment_gateway_data)
             .execute(&mut *tx)
             .await
             {
@@ -219,11 +219,11 @@ impl<
             }
 
             if let Some(ref data) = payment.payment_gateway_data {
-                if let Err(e) = sqlx::query(
+                if let Err(e) = sqlx::query!(
                     "UPDATE payments SET payment_gateway_data = $2, updated_at = NOW() WHERE id = $1",
+                    payment.id.into_uuid(),
+                    data,
                 )
-                .bind(payment.id.into_uuid())
-                .bind(data)
                 .execute(&mut *tx)
                 .await
                 {

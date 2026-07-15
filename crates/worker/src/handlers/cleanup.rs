@@ -19,7 +19,7 @@ pub async fn run_periodic_cleanup(pool: &PgPool) {
 
 /// Delete OTP codes that have expired.
 async fn cleanup_expired_otps(pool: &PgPool) -> Result<(), sqlx::Error> {
-    let deleted = sqlx::query("DELETE FROM otp_codes WHERE expires_at < NOW()")
+    let deleted = sqlx::query!("DELETE FROM otp_codes WHERE expires_at < NOW()")
         .execute(pool)
         .await?;
     if deleted.rows_affected() > 0 {
@@ -30,7 +30,7 @@ async fn cleanup_expired_otps(pool: &PgPool) -> Result<(), sqlx::Error> {
 
 /// Delete expired sessions.
 async fn cleanup_expired_sessions(pool: &PgPool) -> Result<(), sqlx::Error> {
-    let deleted = sqlx::query("DELETE FROM sessions WHERE expires_at < NOW()")
+    let deleted = sqlx::query!("DELETE FROM sessions WHERE expires_at < NOW()")
         .execute(pool)
         .await?;
     if deleted.rows_affected() > 0 {
@@ -41,7 +41,7 @@ async fn cleanup_expired_sessions(pool: &PgPool) -> Result<(), sqlx::Error> {
 
 /// Reset jobs stuck in `running` for more than 5 minutes (worker crash recovery).
 async fn cleanup_stale_locked_jobs(pool: &PgPool) -> Result<(), sqlx::Error> {
-    let updated = sqlx::query(
+    let updated = sqlx::query!(
         r#"UPDATE jobs
            SET status = 'pending', locked_by = NULL, locked_at = NULL
            WHERE status = 'running' AND locked_at < NOW() - INTERVAL '5 minutes'"#,

@@ -17,15 +17,15 @@ impl PostgresRefundLogRepository {
 #[async_trait::async_trait]
 impl RefundLogRepository for PostgresRefundLogRepository {
     async fn create(&self, log: &RefundLog) -> Result<(), DomainError> {
-        sqlx::query(
+        sqlx::query!(
             r#"INSERT INTO refund_logs (id, payment_id, amount_cents, reason, created_at)
                VALUES ($1, $2, $3, $4, $5)"#,
+            log.id.into_uuid(),
+            log.payment_id.into_uuid(),
+            log.amount_cents,
+            log.reason,
+            log.created_at,
         )
-        .bind(log.id.into_uuid())
-        .bind(log.payment_id.into_uuid())
-        .bind(log.amount_cents)
-        .bind(&log.reason)
-        .bind(log.created_at)
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to create refund_log: {e}")))?;
