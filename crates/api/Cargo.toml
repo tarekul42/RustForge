@@ -28,5 +28,7 @@ reqwest.workspace = true
 tower_governor = { version = "0.8", default-features = false, features = ["axum"] }
 governor = "0.10"
 
+utoipa.workspace = true
+
 [dev-dependencies]
 http-body-util = "0.1"

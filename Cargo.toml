@@ -57,3 +57,5 @@ testcontainers-modules = { version = "0.15", features = ["postgres", "minio"] }
 wiremock = "0.6"
 mockall = "0.13"
 
+utoipa = { version = "5", features = ["axum_extras", "uuid"] }
+

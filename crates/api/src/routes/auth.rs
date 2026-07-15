@@ -7,6 +7,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use utoipa::ToSchema;
 
 use crate::error::ApiError;
 use crate::extractors::session;
@@ -47,7 +48,8 @@ pub fn router() -> Router<Arc<AppState>> {
 // ---------------------------------------------------------------------------
 
 /// Request body for `POST /auth/register`.
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
+#[schema(example = json!({"email": "user@example.com", "password": "secret123", "display_name": "Alice"}))]
 pub struct RegisterRequest {
     /// User email address.
     pub email: String,
@@ -58,9 +60,11 @@ pub struct RegisterRequest {
 }
 
 /// Response body for `POST /auth/register` and `POST /auth/login`.
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
+#[schema(example = json!({"user_id": "123e4567-e89b-12d3-a456-426614174000", "session_token": "tok_abc123", "session_expires_at": "2026-07-15T12:00:00Z"}))]
 pub struct RegisterResponse {
     /// The created user's ID.
+    #[schema(value_type = String)]
     pub user_id: String,
     /// Session token for authenticated requests.
     pub session_token: String,
@@ -69,7 +73,8 @@ pub struct RegisterResponse {
 }
 
 /// Request body for `POST /auth/login`.
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
+#[schema(example = json!({"email": "user@example.com", "password": "secret123"}))]
 pub struct LoginRequest {
     /// User email address.
     pub email: String,
@@ -78,9 +83,11 @@ pub struct LoginRequest {
 }
 
 /// Response body for `POST /auth/login`.
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
+#[schema(example = json!({"user_id": "123e4567-e89b-12d3-a456-426614174000", "session_token": "tok_abc123", "session_expires_at": "2026-07-15T12:00:00Z"}))]
 pub struct LoginResponse {
     /// The authenticated user's ID.
+    #[schema(value_type = String)]
     pub user_id: String,
     /// Session token for authenticated requests.
     pub session_token: String,
@@ -89,14 +96,16 @@ pub struct LoginResponse {
 }
 
 /// Request body for `POST /auth/request-otp`.
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
+#[schema(example = json!({"email": "user@example.com"}))]
 pub struct RequestOtpRequest {
     /// Email address to send the OTP to.
     pub email: String,
 }
 
 /// Request body for `POST /auth/verify-otp`.
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
+#[schema(example = json!({"email": "user@example.com", "code": "123456"}))]
 pub struct VerifyOtpRequest {
     /// Email address the OTP was sent to.
     pub email: String,
@@ -105,9 +114,11 @@ pub struct VerifyOtpRequest {
 }
 
 /// Response body for `GET /auth/session`.
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
+#[schema(example = json!({"user_id": "123e4567-e89b-12d3-a456-426614174000", "email": "user@example.com", "role": "student"}))]
 pub struct SessionResponse {
     /// The authenticated user's ID.
+    #[schema(value_type = String)]
     pub user_id: String,
     /// The user's email address.
     pub email: String,
@@ -116,7 +127,8 @@ pub struct SessionResponse {
 }
 
 /// Response body for `POST /auth/logout`.
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
+#[schema(example = json!({"message": "Logged out"}))]
 pub struct LogoutResponse {
     /// Success message.
     pub message: &'static str,
@@ -127,7 +139,17 @@ pub struct LogoutResponse {
 // ---------------------------------------------------------------------------
 
 /// Register a new user with email and password.
-async fn register(
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/register",
+    tag = "auth",
+    request_body = RegisterRequest,
+    responses(
+        (status = 200, description = "User registered successfully", body = RegisterResponse),
+        (status = 400, description = "Bad request"),
+    ),
+)]
+pub(crate) async fn register(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<RegisterRequest>,
 ) -> Result<Response, ApiError> {
@@ -152,7 +174,17 @@ async fn register(
 }
 
 /// Log in with email and password.
-async fn login(
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/login",
+    tag = "auth",
+    request_body = LoginRequest,
+    responses(
+        (status = 200, description = "User logged in successfully", body = LoginResponse),
+        (status = 401, description = "Unauthorized"),
+    ),
+)]
+pub(crate) async fn login(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<Response, ApiError> {
@@ -173,7 +205,17 @@ async fn login(
 }
 
 /// Request an OTP code to be sent to the user's email.
-async fn request_otp(
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/request-otp",
+    tag = "auth",
+    request_body = RequestOtpRequest,
+    responses(
+        (status = 200, description = "OTP sent successfully"),
+        (status = 400, description = "Bad request"),
+    ),
+)]
+pub(crate) async fn request_otp(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<RequestOtpRequest>,
 ) -> Result<Json<serde_json::Value>, ApiError> {
@@ -182,7 +224,17 @@ async fn request_otp(
 }
 
 /// Verify an OTP code for the given email.
-async fn verify_otp(
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/verify-otp",
+    tag = "auth",
+    request_body = VerifyOtpRequest,
+    responses(
+        (status = 200, description = "OTP verified successfully"),
+        (status = 400, description = "Bad request"),
+    ),
+)]
+pub(crate) async fn verify_otp(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<VerifyOtpRequest>,
 ) -> Result<Json<serde_json::Value>, ApiError> {
@@ -194,7 +246,16 @@ async fn verify_otp(
 }
 
 /// Return current session info (user ID, email, role).
-async fn session_handler(
+#[utoipa::path(
+    get,
+    path = "/api/v1/auth/session",
+    tag = "auth",
+    responses(
+        (status = 200, description = "Current session info", body = SessionResponse),
+        (status = 401, description = "Unauthorized"),
+    ),
+)]
+pub(crate) async fn session_handler(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> Result<Json<SessionResponse>, ApiError> {
@@ -208,7 +269,16 @@ async fn session_handler(
 }
 
 /// Invalidate session cookie.
-async fn logout(
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/logout",
+    tag = "auth",
+    responses(
+        (status = 200, description = "Logged out successfully", body = LogoutResponse),
+        (status = 401, description = "Unauthorized"),
+    ),
+)]
+pub(crate) async fn logout(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> Result<Json<LogoutResponse>, ApiError> {

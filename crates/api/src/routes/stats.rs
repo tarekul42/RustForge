@@ -1,6 +1,7 @@
 use axum::{Json, Router, extract::State, routing::get};
 use serde::Serialize;
 use std::sync::Arc;
+use utoipa::ToSchema;
 
 use crate::error::ApiError;
 use crate::extractors::session;
@@ -13,22 +14,31 @@ pub fn router() -> Router<Arc<AppState>> {
         .route("/ratings", get(workshop_ratings))
 }
 
-#[derive(Serialize)]
-struct PlatformStatsResponse {
+#[derive(Serialize, ToSchema)]
+pub(crate) struct PlatformStatsResponse {
     total_users: i64,
     total_workshops: i64,
     total_enrollments: i64,
     total_reviews: i64,
 }
 
-#[derive(Serialize)]
-struct WorkshopRatingResponse {
+#[derive(Serialize, ToSchema)]
+pub(crate) struct WorkshopRatingResponse {
     workshop_id: String,
     average_rating: f64,
     review_count: i64,
 }
 
-async fn platform_stats(
+#[utoipa::path(
+    get,
+    path = "/api/v1/stats",
+    tag = "stats",
+    responses(
+        (status = 200, description = "Platform statistics", body = PlatformStatsResponse),
+        (status = 401, description = "Unauthorized"),
+    ),
+)]
+pub(crate) async fn platform_stats(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> Result<Json<PlatformStatsResponse>, ApiError> {
@@ -46,7 +56,16 @@ async fn platform_stats(
     }))
 }
 
-async fn workshop_ratings(
+#[utoipa::path(
+    get,
+    path = "/api/v1/stats/ratings",
+    tag = "stats",
+    responses(
+        (status = 200, description = "Workshop ratings", body = Vec<WorkshopRatingResponse>),
+        (status = 401, description = "Unauthorized"),
+    ),
+)]
+pub(crate) async fn workshop_ratings(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> Result<Json<Vec<WorkshopRatingResponse>>, ApiError> {

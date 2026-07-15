@@ -1,12 +1,55 @@
+use crate::api_doc::ApiDoc;
 use crate::middleware::origin_check::origin_check_mw;
 use crate::middleware::rate_limit::rate_limiter_layer;
 use crate::middleware::request_id::set_request_id;
 use crate::routes;
 use crate::state::AppState;
 use axum::http::{HeaderValue, Method};
-use axum::{Router, middleware};
+use axum::{Json, Router, middleware, response::Html};
 use std::sync::Arc;
+use std::sync::OnceLock;
 use tower_http::cors::{Any, CorsLayer};
+use utoipa::OpenApi;
+
+static OPENAPI_SPEC: OnceLock<String> = OnceLock::new();
+
+fn openapi_spec() -> &'static str {
+    OPENAPI_SPEC.get_or_init(|| {
+        ApiDoc::openapi()
+            .to_json()
+            .expect("serialize OpenAPI spec")
+    })
+}
+
+async fn serve_openapi_json() -> Json<serde_json::Value> {
+    let spec = openapi_spec();
+    Json(serde_json::from_str(spec).expect("valid JSON"))
+}
+
+async fn serve_swagger_ui() -> Html<String> {
+    let spec = openapi_spec();
+    Html(format!(
+        r#"<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Skill Workshop API — Swagger UI</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+  <script>
+    SwaggerUIBundle({{
+      spec: {spec},
+      dom_id: '#swagger-ui',
+      presets: [SwaggerUIBundle.presets.apis],
+    }});
+  </script>
+</body>
+</html>"#,
+    ))
+}
 
 /// Build the full Axum application router with middleware and shared state.
 pub fn build_app(state: Arc<AppState>) -> Router {
@@ -29,6 +72,8 @@ pub fn build_app(state: Arc<AppState>) -> Router {
     };
 
     Router::<Arc<AppState>>::new()
+        .route("/openapi.json", axum::routing::get(serve_openapi_json))
+        .route("/docs", axum::routing::get(serve_swagger_ui))
         .nest(
             "/api/v1/health",
             routes::health::liveness_router().with_state(()),

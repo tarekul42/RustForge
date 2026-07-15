@@ -5,6 +5,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use utoipa::ToSchema;
 
 use crate::error::ApiError;
 use crate::extractors::session;
@@ -23,9 +24,11 @@ pub fn router() -> Router<Arc<AppState>> {
 }
 
 /// Response body for `GET /users/me` and `GET /users/:id`.
-#[derive(Serialize)]
-pub struct UserProfileResponse {
+#[derive(Serialize, ToSchema)]
+#[schema(example = json!({"user_id": "123e4567-e89b-12d3-a456-426614174000", "email": "user@example.com", "name": "Alice", "picture_url": null, "role": "student", "is_verified": true, "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-06-01T00:00:00Z"}))]
+pub(crate) struct UserProfileResponse {
     /// The user's unique ID.
+    #[schema(value_type = String)]
     pub user_id: String,
     /// The user's email address.
     pub email: String,
@@ -34,6 +37,7 @@ pub struct UserProfileResponse {
     /// URL to the user's profile picture.
     pub picture_url: Option<String>,
     /// The user's role (e.g. "student", "admin").
+    #[schema(example = "student")]
     pub role: String,
     /// Whether the email has been verified.
     pub is_verified: bool,
@@ -44,8 +48,9 @@ pub struct UserProfileResponse {
 }
 
 /// Request body for `PATCH /users/me`.
-#[derive(Deserialize)]
-pub struct UpdateProfileRequest {
+#[derive(Deserialize, ToSchema)]
+#[schema(example = json!({"display_name": "Alice", "picture_url": "https://example.com/avatar.png"}))]
+pub(crate) struct UpdateProfileRequest {
     /// New display name.
     pub display_name: Option<String>,
     /// New profile picture URL.
@@ -53,11 +58,14 @@ pub struct UpdateProfileRequest {
 }
 
 /// Response body for `GET /users/me/registrations`.
-#[derive(Serialize)]
-pub struct RegistrationResponse {
+#[derive(Serialize, ToSchema)]
+#[schema(example = json!({"id": "123e4567-e89b-12d3-a456-426614174000", "workshop_id": "223e4567-e89b-12d3-a456-426614174001", "status": "confirmed", "registered_at": "2026-07-01T10:00:00Z"}))]
+pub(crate) struct RegistrationResponse {
     /// Registration ID.
+    #[schema(value_type = String)]
     pub id: String,
     /// Workshop ID the user registered for.
+    #[schema(value_type = String)]
     pub workshop_id: String,
     /// Registration status.
     pub status: String,
@@ -67,8 +75,9 @@ pub struct RegistrationResponse {
 
 // Admin request/response types
 
-#[derive(Deserialize)]
-struct AdminUpdateUserRequest {
+#[derive(Deserialize, ToSchema)]
+#[schema(example = json!({"name": "Alice", "role": "admin", "status": "active", "phone": "+1234567890", "age": 30, "address": "123 Main St", "expertise": "Rust", "bio": "Software engineer"}))]
+pub(crate) struct AdminUpdateUserRequest {
     name: Option<String>,
     role: Option<String>,
     status: Option<String>,
@@ -79,7 +88,16 @@ struct AdminUpdateUserRequest {
     bio: Option<String>,
 }
 
-async fn get_profile(
+#[utoipa::path(
+    get,
+    path = "/api/v1/users/me",
+    tag = "users",
+    responses(
+        (status = 200, description = "User profile retrieved", body = UserProfileResponse),
+        (status = 401, description = "Unauthorized"),
+    ),
+)]
+pub(crate) async fn get_profile(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> Result<Json<UserProfileResponse>, ApiError> {
@@ -97,7 +115,17 @@ async fn get_profile(
     }))
 }
 
-async fn update_profile(
+#[utoipa::path(
+    patch,
+    path = "/api/v1/users/me",
+    tag = "users",
+    request_body = UpdateProfileRequest,
+    responses(
+        (status = 200, description = "Profile updated", body = UserProfileResponse),
+        (status = 401, description = "Unauthorized"),
+    ),
+)]
+pub(crate) async fn update_profile(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Json(payload): Json<UpdateProfileRequest>,
@@ -123,7 +151,16 @@ async fn update_profile(
     }))
 }
 
-async fn list_registrations(
+#[utoipa::path(
+    get,
+    path = "/api/v1/users/me/registrations",
+    tag = "users",
+    responses(
+        (status = 200, description = "List of user registrations", body = Vec<RegistrationResponse>),
+        (status = 401, description = "Unauthorized"),
+    ),
+)]
+pub(crate) async fn list_registrations(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> Result<Json<Vec<RegistrationResponse>>, ApiError> {
@@ -144,7 +181,16 @@ async fn list_registrations(
     ))
 }
 
-async fn list_users(
+#[utoipa::path(
+    get,
+    path = "/api/v1/users",
+    tag = "users",
+    responses(
+        (status = 200, description = "List of all users (admin)", body = Vec<UserProfileResponse>),
+        (status = 401, description = "Unauthorized"),
+    ),
+)]
+pub(crate) async fn list_users(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> Result<Json<Vec<UserProfileResponse>>, ApiError> {
@@ -170,7 +216,20 @@ async fn list_users(
     Ok(Json(responses))
 }
 
-async fn get_user(
+#[utoipa::path(
+    get,
+    path = "/api/v1/users/{id}",
+    tag = "users",
+    params(
+        ("id" = String, Path, description = "User UUID"),
+    ),
+    responses(
+        (status = 200, description = "User profile retrieved (admin)", body = UserProfileResponse),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "User not found"),
+    ),
+)]
+pub(crate) async fn get_user(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,
@@ -195,7 +254,21 @@ async fn get_user(
     }))
 }
 
-async fn admin_update_user(
+#[utoipa::path(
+    patch,
+    path = "/api/v1/users/{id}",
+    tag = "users",
+    request_body = AdminUpdateUserRequest,
+    params(
+        ("id" = String, Path, description = "User UUID"),
+    ),
+    responses(
+        (status = 200, description = "User updated (admin)", body = UserProfileResponse),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "User not found"),
+    ),
+)]
+pub(crate) async fn admin_update_user(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,
@@ -233,7 +306,20 @@ async fn admin_update_user(
     }))
 }
 
-async fn admin_delete_user(
+#[utoipa::path(
+    delete,
+    path = "/api/v1/users/{id}",
+    tag = "users",
+    params(
+        ("id" = String, Path, description = "User UUID"),
+    ),
+    responses(
+        (status = 200, description = "User deleted (admin)"),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "User not found"),
+    ),
+)]
+pub(crate) async fn admin_delete_user(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,

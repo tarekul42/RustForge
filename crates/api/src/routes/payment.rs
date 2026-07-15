@@ -6,6 +6,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
+use utoipa::ToSchema;
 
 use crate::error::ApiError;
 use crate::extractors::session;
@@ -27,20 +28,20 @@ pub fn router() -> Router<Arc<AppState>> {
 // Request / Response types
 // ---------------------------------------------------------------------------
 
-#[derive(Deserialize)]
-struct PaymentCallback {
+#[derive(Deserialize, ToSchema, utoipa::IntoParams)]
+pub(crate) struct PaymentCallback {
     tran_id: Option<String>,
     val_id: Option<String>,
 }
 
-#[derive(Deserialize)]
-struct RefundRequest {
+#[derive(Deserialize, ToSchema)]
+pub(crate) struct RefundRequest {
     payment_id: String,
     reason: String,
 }
 
-#[derive(Serialize)]
-struct PaymentResponse {
+#[derive(Serialize, ToSchema)]
+pub(crate) struct PaymentResponse {
     id: String,
     enrollment_id: String,
     transaction_id: String,
@@ -51,14 +52,14 @@ struct PaymentResponse {
     updated_at: String,
 }
 
-#[derive(Serialize)]
-struct IpnResponse {
+#[derive(Serialize, ToSchema)]
+pub(crate) struct IpnResponse {
     success: bool,
     message: String,
 }
 
-#[derive(Serialize)]
-struct InvoiceResponse {
+#[derive(Serialize, ToSchema)]
+pub(crate) struct InvoiceResponse {
     url: Option<String>,
 }
 
@@ -66,7 +67,17 @@ struct InvoiceResponse {
 // Handlers
 // ---------------------------------------------------------------------------
 
-async fn success_get(
+#[utoipa::path(
+    get,
+    path = "/api/v1/payments/success",
+    tag = "payments",
+    params(PaymentCallback),
+    responses(
+        (status = 200, description = "Payment processed successfully", body = PaymentResponse),
+        (status = 400, description = "Bad request"),
+    ),
+)]
+pub(crate) async fn success_get(
     State(state): State<Arc<AppState>>,
     Query(payload): Query<PaymentCallback>,
 ) -> Result<Json<PaymentResponse>, ApiError> {
@@ -94,14 +105,34 @@ async fn success_get(
     }))
 }
 
-async fn success_post(
+#[utoipa::path(
+    post,
+    path = "/api/v1/payments/success",
+    tag = "payments",
+    request_body(content = inline(PaymentCallback)),
+    responses(
+        (status = 200, description = "Payment processed successfully", body = PaymentResponse),
+        (status = 400, description = "Bad request"),
+    ),
+)]
+pub(crate) async fn success_post(
     State(state): State<Arc<AppState>>,
     Form(payload): Form<PaymentCallback>,
 ) -> Result<Json<PaymentResponse>, ApiError> {
     success_get(State(state), Query(payload)).await
 }
 
-async fn fail_get(
+#[utoipa::path(
+    get,
+    path = "/api/v1/payments/fail",
+    tag = "payments",
+    params(PaymentCallback),
+    responses(
+        (status = 200, description = "Payment marked as failed", body = PaymentResponse),
+        (status = 400, description = "Bad request"),
+    ),
+)]
+pub(crate) async fn fail_get(
     State(state): State<Arc<AppState>>,
     Query(payload): Query<PaymentCallback>,
 ) -> Result<Json<PaymentResponse>, ApiError> {
@@ -123,14 +154,34 @@ async fn fail_get(
     }))
 }
 
-async fn fail_post(
+#[utoipa::path(
+    post,
+    path = "/api/v1/payments/fail",
+    tag = "payments",
+    request_body(content = inline(PaymentCallback)),
+    responses(
+        (status = 200, description = "Payment marked as failed", body = PaymentResponse),
+        (status = 400, description = "Bad request"),
+    ),
+)]
+pub(crate) async fn fail_post(
     State(state): State<Arc<AppState>>,
     Form(payload): Form<PaymentCallback>,
 ) -> Result<Json<PaymentResponse>, ApiError> {
     fail_get(State(state), Query(payload)).await
 }
 
-async fn cancel_get(
+#[utoipa::path(
+    get,
+    path = "/api/v1/payments/cancel",
+    tag = "payments",
+    params(PaymentCallback),
+    responses(
+        (status = 200, description = "Payment cancelled", body = PaymentResponse),
+        (status = 400, description = "Bad request"),
+    ),
+)]
+pub(crate) async fn cancel_get(
     State(state): State<Arc<AppState>>,
     Query(payload): Query<PaymentCallback>,
 ) -> Result<Json<PaymentResponse>, ApiError> {
@@ -155,14 +206,33 @@ async fn cancel_get(
     }))
 }
 
-async fn cancel_post(
+#[utoipa::path(
+    post,
+    path = "/api/v1/payments/cancel",
+    tag = "payments",
+    request_body(content = inline(PaymentCallback)),
+    responses(
+        (status = 200, description = "Payment cancelled", body = PaymentResponse),
+        (status = 400, description = "Bad request"),
+    ),
+)]
+pub(crate) async fn cancel_post(
     State(state): State<Arc<AppState>>,
     Form(payload): Form<PaymentCallback>,
 ) -> Result<Json<PaymentResponse>, ApiError> {
     cancel_get(State(state), Query(payload)).await
 }
 
-async fn ipn_handler(
+#[utoipa::path(
+    post,
+    path = "/api/v1/payments/ipn",
+    tag = "payments",
+    request_body(content = inline(HashMap<String, String>)),
+    responses(
+        (status = 200, description = "IPN processed", body = IpnResponse),
+    ),
+)]
+pub(crate) async fn ipn_handler(
     State(state): State<Arc<AppState>>,
     Form(payload): Form<HashMap<String, String>>,
 ) -> Result<Json<IpnResponse>, ApiError> {
@@ -174,7 +244,18 @@ async fn ipn_handler(
     }))
 }
 
-async fn refund_handler(
+#[utoipa::path(
+    post,
+    path = "/api/v1/payments/refund",
+    tag = "payments",
+    request_body = RefundRequest,
+    responses(
+        (status = 200, description = "Refund processed", body = PaymentResponse),
+        (status = 400, description = "Bad request"),
+        (status = 401, description = "Unauthorized"),
+    ),
+)]
+pub(crate) async fn refund_handler(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Json(payload): Json<RefundRequest>,
@@ -212,7 +293,19 @@ async fn refund_handler(
     }))
 }
 
-async fn get_invoice_url(
+#[utoipa::path(
+    get,
+    path = "/api/v1/payments/invoice/{id}",
+    tag = "payments",
+    params(
+        ("id" = String, Path, description = "Payment ID"),
+    ),
+    responses(
+        (status = 200, description = "Invoice URL", body = InvoiceResponse),
+        (status = 404, description = "Not found"),
+    ),
+)]
+pub(crate) async fn get_invoice_url(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<String>,

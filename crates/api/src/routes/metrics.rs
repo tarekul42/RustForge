@@ -10,7 +10,7 @@ pub fn router() -> Router<Arc<AppState>> {
 }
 
 /// Render Prometheus metrics, protected by `X-Metrics-Key` header.
-async fn metrics_handler(
+pub(crate) async fn metrics_handler(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {

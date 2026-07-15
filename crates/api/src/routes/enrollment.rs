@@ -5,6 +5,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use utoipa::ToSchema;
 
 use crate::error::ApiError;
 use crate::extractors::session;
@@ -23,8 +24,8 @@ pub fn router() -> Router<Arc<AppState>> {
 // Request / Response types
 // ---------------------------------------------------------------------------
 
-#[derive(Deserialize)]
-struct CreateEnrollmentRequest {
+#[derive(Deserialize, ToSchema)]
+pub(crate) struct CreateEnrollmentRequest {
     workshop_id: String,
     student_count: Option<i32>,
     cus_name: String,
@@ -32,15 +33,15 @@ struct CreateEnrollmentRequest {
     cus_phone: String,
 }
 
-#[derive(Serialize)]
-struct CreateEnrollmentResponse {
+#[derive(Serialize, ToSchema)]
+pub(crate) struct CreateEnrollmentResponse {
     enrollment_id: String,
     payment_id: String,
     gateway_url: Option<String>,
 }
 
-#[derive(Serialize)]
-struct EnrollmentResponse {
+#[derive(Serialize, ToSchema)]
+pub(crate) struct EnrollmentResponse {
     id: String,
     user_id: String,
     workshop_id: String,
@@ -55,7 +56,17 @@ struct EnrollmentResponse {
 // Handlers
 // ---------------------------------------------------------------------------
 
-async fn create_enrollment(
+#[utoipa::path(
+    post,
+    path = "/api/v1/enrollments",
+    tag = "enrollments",
+    request_body = CreateEnrollmentRequest,
+    responses(
+        (status = 201, description = "Enrollment created", body = CreateEnrollmentResponse),
+        (status = 400, description = "Bad request"),
+    ),
+)]
+pub(crate) async fn create_enrollment(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Json(payload): Json<CreateEnrollmentRequest>,
@@ -86,7 +97,15 @@ async fn create_enrollment(
     }))
 }
 
-async fn my_enrollments(
+#[utoipa::path(
+    get,
+    path = "/api/v1/enrollments/my",
+    tag = "enrollments",
+    responses(
+        (status = 200, description = "List of user enrollments", body = Vec<EnrollmentResponse>),
+    ),
+)]
+pub(crate) async fn my_enrollments(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> Result<Json<Vec<EnrollmentResponse>>, ApiError> {
@@ -111,7 +130,19 @@ async fn my_enrollments(
     ))
 }
 
-async fn get_enrollment(
+#[utoipa::path(
+    get,
+    path = "/api/v1/enrollments/{id}",
+    tag = "enrollments",
+    params(
+        ("id" = String, Path, description = "Enrollment ID"),
+    ),
+    responses(
+        (status = 200, description = "Enrollment details", body = EnrollmentResponse),
+        (status = 404, description = "Not found"),
+    ),
+)]
+pub(crate) async fn get_enrollment(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<String>,

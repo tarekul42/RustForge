@@ -5,6 +5,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use utoipa::ToSchema;
 
 use crate::error::ApiError;
 use crate::extractors::session;
@@ -20,21 +21,21 @@ pub fn router() -> Router<Arc<AppState>> {
         .route("/{id}", delete(delete_contact))
 }
 
-#[derive(Deserialize)]
-struct SubmitContactRequest {
+#[derive(Deserialize, ToSchema)]
+pub(crate) struct SubmitContactRequest {
     name: String,
     email: String,
     subject: String,
     message: String,
 }
 
-#[derive(Deserialize)]
-struct ListContactsQuery {
+#[derive(Deserialize, ToSchema, utoipa::IntoParams)]
+pub(crate) struct ListContactsQuery {
     is_read: Option<bool>,
 }
 
-#[derive(Serialize)]
-struct ContactResponse {
+#[derive(Serialize, ToSchema)]
+pub(crate) struct ContactResponse {
     id: String,
     name: String,
     email: String,
@@ -45,7 +46,17 @@ struct ContactResponse {
     updated_at: String,
 }
 
-async fn submit_contact(
+#[utoipa::path(
+    post,
+    path = "/api/v1/contacts",
+    tag = "contacts",
+    request_body = SubmitContactRequest,
+    responses(
+        (status = 201, description = "Contact submitted", body = ContactResponse),
+        (status = 400, description = "Bad request"),
+    ),
+)]
+pub(crate) async fn submit_contact(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<SubmitContactRequest>,
 ) -> Result<Json<ContactResponse>, ApiError> {
@@ -62,7 +73,17 @@ async fn submit_contact(
     Ok(Json(to_response(&contact)))
 }
 
-async fn list_contacts(
+#[utoipa::path(
+    get,
+    path = "/api/v1/contacts",
+    tag = "contacts",
+    params(ListContactsQuery),
+    responses(
+        (status = 200, description = "List of contacts", body = Vec<ContactResponse>),
+        (status = 401, description = "Unauthorized"),
+    ),
+)]
+pub(crate) async fn list_contacts(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Query(query): Query<ListContactsQuery>,
@@ -77,7 +98,20 @@ async fn list_contacts(
     Ok(Json(contacts.iter().map(to_response).collect()))
 }
 
-async fn mark_read_contact(
+#[utoipa::path(
+    patch,
+    path = "/api/v1/contacts/{id}/read",
+    tag = "contacts",
+    params(
+        ("id" = String, Path, description = "Contact ID"),
+    ),
+    responses(
+        (status = 200, description = "Contact marked as read", body = ContactResponse),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "Not found"),
+    ),
+)]
+pub(crate) async fn mark_read_contact(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<String>,
@@ -95,7 +129,20 @@ async fn mark_read_contact(
     Ok(Json(to_response(&contact)))
 }
 
-async fn delete_contact(
+#[utoipa::path(
+    delete,
+    path = "/api/v1/contacts/{id}",
+    tag = "contacts",
+    params(
+        ("id" = String, Path, description = "Contact ID"),
+    ),
+    responses(
+        (status = 200, description = "Contact deleted"),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "Not found"),
+    ),
+)]
+pub(crate) async fn delete_contact(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<String>,

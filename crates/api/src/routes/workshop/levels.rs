@@ -5,6 +5,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use utoipa::ToSchema;
 
 use crate::error::ApiError;
 use crate::extractors::session;
@@ -21,8 +22,8 @@ pub fn router() -> Router<Arc<AppState>> {
         .route("/{id}", delete(delete_level))
 }
 
-#[derive(Serialize)]
-struct LevelResponse {
+#[derive(Serialize, ToSchema)]
+pub(crate) struct LevelResponse {
     pub id: String,
     pub name: String,
     pub created_at: String,
@@ -40,17 +41,26 @@ impl From<sw_domain::aggregates::level::Level> for LevelResponse {
     }
 }
 
-#[derive(Deserialize)]
-struct CreateLevelRequest {
+#[derive(Deserialize, ToSchema)]
+pub(crate) struct CreateLevelRequest {
     pub name: String,
 }
 
-#[derive(Deserialize)]
-struct RenameLevelRequest {
+#[derive(Deserialize, ToSchema)]
+pub(crate) struct RenameLevelRequest {
     pub name: String,
 }
 
-async fn create_level(
+#[utoipa::path(
+    post,
+    path = "/api/v1/workshops/levels",
+    tag = "levels",
+    request_body = CreateLevelRequest,
+    responses(
+        (status = 200, description = "Level created", body = LevelResponse),
+    ),
+)]
+pub(crate) async fn create_level(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Json(payload): Json<CreateLevelRequest>,
@@ -64,14 +74,33 @@ async fn create_level(
     Ok(Json(LevelResponse::from(level)))
 }
 
-async fn list_levels(
+#[utoipa::path(
+    get,
+    path = "/api/v1/workshops/levels",
+    tag = "levels",
+    responses(
+        (status = 200, description = "List of levels", body = Vec<LevelResponse>),
+    ),
+)]
+pub(crate) async fn list_levels(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<LevelResponse>>, ApiError> {
     let levels = state.level_service.list().await?;
     Ok(Json(levels.into_iter().map(LevelResponse::from).collect()))
 }
 
-async fn get_level(
+#[utoipa::path(
+    get,
+    path = "/api/v1/workshops/levels/{id}",
+    tag = "levels",
+    params(
+        ("id" = Uuid, Path, description = "Level ID"),
+    ),
+    responses(
+        (status = 200, description = "Level found", body = LevelResponse),
+    ),
+)]
+pub(crate) async fn get_level(
     State(state): State<Arc<AppState>>,
     Path(id): Path<uuid::Uuid>,
 ) -> Result<Json<LevelResponse>, ApiError> {
@@ -82,7 +111,19 @@ async fn get_level(
     Ok(Json(LevelResponse::from(level)))
 }
 
-async fn rename_level(
+#[utoipa::path(
+    patch,
+    path = "/api/v1/workshops/levels/{id}",
+    tag = "levels",
+    params(
+        ("id" = Uuid, Path, description = "Level ID"),
+    ),
+    request_body = RenameLevelRequest,
+    responses(
+        (status = 200, description = "Level renamed", body = LevelResponse),
+    ),
+)]
+pub(crate) async fn rename_level(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,
@@ -100,7 +141,18 @@ async fn rename_level(
     Ok(Json(LevelResponse::from(level)))
 }
 
-async fn delete_level(
+#[utoipa::path(
+    delete,
+    path = "/api/v1/workshops/levels/{id}",
+    tag = "levels",
+    params(
+        ("id" = Uuid, Path, description = "Level ID"),
+    ),
+    responses(
+        (status = 200, description = "Level deleted", body = serde_json::Value),
+    ),
+)]
+pub(crate) async fn delete_level(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,

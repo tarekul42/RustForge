@@ -19,6 +19,8 @@
 )]
 #![doc = "API crate: HTTP server using Axum."]
 
+/// OpenAPI specification (utoipa).
+pub mod api_doc;
 /// Axum application router and middleware setup.
 pub mod app;
 /// API error types with IntoResponse implementation.

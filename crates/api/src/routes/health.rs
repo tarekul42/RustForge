@@ -26,7 +26,7 @@ pub fn dashboard_router() -> Router<Arc<AppState>> {
 }
 
 /// Liveness probe — returns 200 as long as the process is running.
-async fn health() -> Json<Value> {
+pub(crate) async fn health() -> Json<Value> {
     Json(json!({
         "success": true,
         "data": {
@@ -36,7 +36,7 @@ async fn health() -> Json<Value> {
 }
 
 /// Readiness probe — returns 200 only if the app can serve traffic.
-async fn health_ready(
+pub(crate) async fn health_ready(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
     let start = Instant::now();
@@ -95,7 +95,7 @@ async fn health_ready(
 }
 
 /// Admin dashboard — detailed health info (DB pool, queue depth, etc.).
-async fn health_dashboard(
+pub(crate) async fn health_dashboard(
     State(state): State<Arc<AppState>>,
     headers: HeaderMap,
 ) -> Result<Json<Value>, (StatusCode, Json<Value>)> {

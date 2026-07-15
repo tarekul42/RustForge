@@ -5,6 +5,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use utoipa::ToSchema;
 
 use crate::error::ApiError;
 use crate::extractors::session;
@@ -22,8 +23,8 @@ pub fn router() -> Router<Arc<AppState>> {
         .route("/{id}", delete(delete_category))
 }
 
-#[derive(Serialize)]
-struct CategoryResponse {
+#[derive(Serialize, ToSchema)]
+pub(crate) struct CategoryResponse {
     pub id: String,
     pub name: String,
     pub slug: String,
@@ -47,22 +48,31 @@ impl From<sw_domain::aggregates::category::Category> for CategoryResponse {
     }
 }
 
-#[derive(Deserialize)]
-struct CreateCategoryRequest {
+#[derive(Deserialize, ToSchema)]
+pub(crate) struct CreateCategoryRequest {
     pub name: String,
     pub slug: Option<String>,
     pub description: Option<String>,
     pub thumbnail_url: Option<String>,
 }
 
-#[derive(Deserialize)]
-struct UpdateCategoryRequest {
+#[derive(Deserialize, ToSchema)]
+pub(crate) struct UpdateCategoryRequest {
     pub name: Option<String>,
     pub description: Option<String>,
     pub thumbnail_url: Option<String>,
 }
 
-async fn create_category(
+#[utoipa::path(
+    post,
+    path = "/api/v1/categories",
+    tag = "categories",
+    request_body = CreateCategoryRequest,
+    responses(
+        (status = 200, description = "Category created", body = CategoryResponse),
+    ),
+)]
+pub(crate) async fn create_category(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Json(payload): Json<CreateCategoryRequest>,
@@ -87,7 +97,15 @@ async fn create_category(
     Ok(Json(CategoryResponse::from(category)))
 }
 
-async fn list_categories(
+#[utoipa::path(
+    get,
+    path = "/api/v1/categories",
+    tag = "categories",
+    responses(
+        (status = 200, description = "List of categories", body = Vec<CategoryResponse>),
+    ),
+)]
+pub(crate) async fn list_categories(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<CategoryResponse>>, ApiError> {
     let categories = state.category_service.list().await?;
@@ -96,7 +114,18 @@ async fn list_categories(
     ))
 }
 
-async fn get_category_by_slug(
+#[utoipa::path(
+    get,
+    path = "/api/v1/categories/{slug}",
+    tag = "categories",
+    params(
+        ("slug" = String, Path, description = "Category slug"),
+    ),
+    responses(
+        (status = 200, description = "Category found", body = CategoryResponse),
+    ),
+)]
+pub(crate) async fn get_category_by_slug(
     State(state): State<Arc<AppState>>,
     Path(slug): Path<String>,
 ) -> Result<Json<CategoryResponse>, ApiError> {
@@ -104,7 +133,19 @@ async fn get_category_by_slug(
     Ok(Json(CategoryResponse::from(category)))
 }
 
-async fn update_category(
+#[utoipa::path(
+    patch,
+    path = "/api/v1/categories/{id}",
+    tag = "categories",
+    params(
+        ("id" = Uuid, Path, description = "Category ID"),
+    ),
+    request_body = UpdateCategoryRequest,
+    responses(
+        (status = 200, description = "Category updated", body = CategoryResponse),
+    ),
+)]
+pub(crate) async fn update_category(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,
@@ -129,7 +170,18 @@ async fn update_category(
     Ok(Json(CategoryResponse::from(category)))
 }
 
-async fn delete_category(
+#[utoipa::path(
+    delete,
+    path = "/api/v1/categories/{id}",
+    tag = "categories",
+    params(
+        ("id" = Uuid, Path, description = "Category ID"),
+    ),
+    responses(
+        (status = 200, description = "Category deleted", body = serde_json::Value),
+    ),
+)]
+pub(crate) async fn delete_category(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,

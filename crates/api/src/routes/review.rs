@@ -5,6 +5,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use utoipa::ToSchema;
 
 use crate::error::ApiError;
 use crate::extractors::session;
@@ -23,23 +24,23 @@ pub fn router() -> Router<Arc<AppState>> {
         .route("/{id}", delete(delete_review))
 }
 
-#[derive(Deserialize)]
-struct CreateReviewRequest {
+#[derive(Deserialize, ToSchema)]
+pub(crate) struct CreateReviewRequest {
     workshop_id: String,
     rating: i16,
     title: String,
     content: String,
 }
 
-#[derive(Deserialize)]
-struct UpdateReviewRequest {
+#[derive(Deserialize, ToSchema)]
+pub(crate) struct UpdateReviewRequest {
     rating: Option<i16>,
     title: Option<String>,
     content: Option<String>,
 }
 
-#[derive(Serialize)]
-struct ReviewResponse {
+#[derive(Serialize, ToSchema)]
+pub(crate) struct ReviewResponse {
     id: String,
     user_id: String,
     workshop_id: String,
@@ -51,7 +52,17 @@ struct ReviewResponse {
     updated_at: String,
 }
 
-async fn create_review(
+#[utoipa::path(
+    post,
+    path = "/api/v1/reviews",
+    tag = "reviews",
+    request_body = CreateReviewRequest,
+    responses(
+        (status = 201, description = "Review created", body = ReviewResponse),
+        (status = 400, description = "Bad request"),
+    ),
+)]
+pub(crate) async fn create_review(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Json(payload): Json<CreateReviewRequest>,
@@ -75,7 +86,18 @@ async fn create_review(
     Ok(Json(to_response(&review)))
 }
 
-async fn list_reviews_for_workshop(
+#[utoipa::path(
+    get,
+    path = "/api/v1/reviews/workshop/{workshop_id}",
+    tag = "reviews",
+    params(
+        ("workshop_id" = String, Path, description = "Workshop ID"),
+    ),
+    responses(
+        (status = 200, description = "List of reviews for workshop", body = Vec<ReviewResponse>),
+    ),
+)]
+pub(crate) async fn list_reviews_for_workshop(
     State(state): State<Arc<AppState>>,
     Path(workshop_id): Path<String>,
 ) -> Result<Json<Vec<ReviewResponse>>, ApiError> {
@@ -91,7 +113,19 @@ async fn list_reviews_for_workshop(
     Ok(Json(reviews.iter().map(to_response).collect()))
 }
 
-async fn get_review(
+#[utoipa::path(
+    get,
+    path = "/api/v1/reviews/{id}",
+    tag = "reviews",
+    params(
+        ("id" = String, Path, description = "Review ID"),
+    ),
+    responses(
+        (status = 200, description = "Review details", body = ReviewResponse),
+        (status = 404, description = "Not found"),
+    ),
+)]
+pub(crate) async fn get_review(
     State(state): State<Arc<AppState>>,
     Path(id): Path<String>,
 ) -> Result<Json<ReviewResponse>, ApiError> {
@@ -107,7 +141,22 @@ async fn get_review(
     Ok(Json(to_response(&review)))
 }
 
-async fn update_review(
+#[utoipa::path(
+    patch,
+    path = "/api/v1/reviews/{id}",
+    tag = "reviews",
+    request_body = UpdateReviewRequest,
+    params(
+        ("id" = String, Path, description = "Review ID"),
+    ),
+    responses(
+        (status = 200, description = "Review updated", body = ReviewResponse),
+        (status = 400, description = "Bad request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "Not found"),
+    ),
+)]
+pub(crate) async fn update_review(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<String>,
@@ -144,7 +193,20 @@ async fn update_review(
     Ok(Json(to_response(&review)))
 }
 
-async fn approve_review(
+#[utoipa::path(
+    patch,
+    path = "/api/v1/reviews/{id}/approve",
+    tag = "reviews",
+    params(
+        ("id" = String, Path, description = "Review ID"),
+    ),
+    responses(
+        (status = 200, description = "Review approved", body = ReviewResponse),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "Not found"),
+    ),
+)]
+pub(crate) async fn approve_review(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<String>,
@@ -162,7 +224,20 @@ async fn approve_review(
     Ok(Json(to_response(&review)))
 }
 
-async fn reject_review(
+#[utoipa::path(
+    patch,
+    path = "/api/v1/reviews/{id}/reject",
+    tag = "reviews",
+    params(
+        ("id" = String, Path, description = "Review ID"),
+    ),
+    responses(
+        (status = 200, description = "Review rejected", body = ReviewResponse),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "Not found"),
+    ),
+)]
+pub(crate) async fn reject_review(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<String>,
@@ -180,7 +255,20 @@ async fn reject_review(
     Ok(Json(to_response(&review)))
 }
 
-async fn delete_review(
+#[utoipa::path(
+    delete,
+    path = "/api/v1/reviews/{id}",
+    tag = "reviews",
+    params(
+        ("id" = String, Path, description = "Review ID"),
+    ),
+    responses(
+        (status = 200, description = "Review deleted"),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "Not found"),
+    ),
+)]
+pub(crate) async fn delete_review(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<String>,

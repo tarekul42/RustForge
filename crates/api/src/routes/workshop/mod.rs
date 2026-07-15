@@ -8,6 +8,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use utoipa::ToSchema;
 
 use crate::error::ApiError;
 use crate::extractors::session;
@@ -28,15 +29,18 @@ pub fn router() -> Router<Arc<AppState>> {
         .route("/{id}/images/{image_id}", delete(remove_workshop_image))
 }
 
-#[derive(Serialize)]
-struct WorkshopResponse {
+#[derive(Serialize, ToSchema)]
+pub(crate) struct WorkshopResponse {
     pub id: String,
     pub title: String,
     pub slug: String,
     pub description: Option<String>,
     pub location: Option<String>,
+    #[schema(example = 10000)]
     pub price_cents: i64,
+    #[schema(example = "2024-01-01T00:00:00Z", value_type = String)]
     pub start_date: Option<String>,
+    #[schema(example = "2024-01-01T00:00:00Z", value_type = String)]
     pub end_date: Option<String>,
     pub max_seats: Option<i32>,
     pub current_enrollments: i32,
@@ -49,15 +53,15 @@ struct WorkshopResponse {
     pub images: Vec<WorkshopImageResponse>,
 }
 
-#[derive(Serialize)]
-struct WorkshopImageResponse {
+#[derive(Serialize, ToSchema)]
+pub(crate) struct WorkshopImageResponse {
     pub id: String,
     pub url: String,
     pub created_at: String,
 }
 
-#[derive(Deserialize)]
-struct CreateWorkshopRequest {
+#[derive(Deserialize, ToSchema)]
+pub(crate) struct CreateWorkshopRequest {
     pub title: String,
     pub slug: Option<String>,
     pub description: Option<String>,
@@ -71,8 +75,8 @@ struct CreateWorkshopRequest {
     pub level_id: String,
 }
 
-#[derive(Deserialize)]
-struct UpdateWorkshopRequest {
+#[derive(Deserialize, ToSchema)]
+pub(crate) struct UpdateWorkshopRequest {
     pub title: Option<String>,
     pub slug: Option<String>,
     pub description: Option<String>,
@@ -86,13 +90,22 @@ struct UpdateWorkshopRequest {
     pub min_age: Option<i16>,
 }
 
-#[derive(Deserialize)]
-struct AddImageRequest {
+#[derive(Deserialize, ToSchema)]
+pub(crate) struct AddImageRequest {
     pub url: String,
     pub s3_key: String,
 }
 
-async fn create_workshop(
+#[utoipa::path(
+    post,
+    path = "/api/v1/workshops",
+    tag = "workshops",
+    request_body = CreateWorkshopRequest,
+    responses(
+        (status = 200, description = "Workshop created", body = WorkshopResponse),
+    ),
+)]
+pub(crate) async fn create_workshop(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Json(payload): Json<CreateWorkshopRequest>,
@@ -149,7 +162,15 @@ async fn create_workshop(
     Ok(Json(to_workshop_response(workshop, images)))
 }
 
-async fn list_workshops(
+#[utoipa::path(
+    get,
+    path = "/api/v1/workshops",
+    tag = "workshops",
+    responses(
+        (status = 200, description = "List of workshops", body = Vec<WorkshopResponse>),
+    ),
+)]
+pub(crate) async fn list_workshops(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<WorkshopResponse>>, ApiError> {
     let workshops = state.workshop_service.list().await?;
@@ -161,7 +182,18 @@ async fn list_workshops(
     Ok(Json(responses))
 }
 
-async fn get_workshop_by_slug(
+#[utoipa::path(
+    get,
+    path = "/api/v1/workshops/{slug}",
+    tag = "workshops",
+    params(
+        ("slug" = String, Path, description = "Workshop slug"),
+    ),
+    responses(
+        (status = 200, description = "Workshop found", body = WorkshopResponse),
+    ),
+)]
+pub(crate) async fn get_workshop_by_slug(
     State(state): State<Arc<AppState>>,
     Path(slug): Path<String>,
 ) -> Result<Json<WorkshopResponse>, ApiError> {
@@ -170,7 +202,19 @@ async fn get_workshop_by_slug(
     Ok(Json(to_workshop_response(workshop, images)))
 }
 
-async fn update_workshop(
+#[utoipa::path(
+    patch,
+    path = "/api/v1/workshops/{id}",
+    tag = "workshops",
+    params(
+        ("id" = Uuid, Path, description = "Workshop ID"),
+    ),
+    request_body = UpdateWorkshopRequest,
+    responses(
+        (status = 200, description = "Workshop updated", body = WorkshopResponse),
+    ),
+)]
+pub(crate) async fn update_workshop(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,
@@ -232,7 +276,18 @@ async fn update_workshop(
     Ok(Json(to_workshop_response(workshop, images)))
 }
 
-async fn delete_workshop(
+#[utoipa::path(
+    delete,
+    path = "/api/v1/workshops/{id}",
+    tag = "workshops",
+    params(
+        ("id" = Uuid, Path, description = "Workshop ID"),
+    ),
+    responses(
+        (status = 200, description = "Workshop deleted", body = serde_json::Value),
+    ),
+)]
+pub(crate) async fn delete_workshop(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,
@@ -250,7 +305,19 @@ async fn delete_workshop(
     Ok(Json(serde_json::json!({"success": true})))
 }
 
-async fn add_workshop_image(
+#[utoipa::path(
+    post,
+    path = "/api/v1/workshops/{id}/images",
+    tag = "workshops",
+    params(
+        ("id" = Uuid, Path, description = "Workshop ID"),
+    ),
+    request_body = AddImageRequest,
+    responses(
+        (status = 200, description = "Image added", body = WorkshopImageResponse),
+    ),
+)]
+pub(crate) async fn add_workshop_image(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path(id): Path<uuid::Uuid>,
@@ -277,7 +344,19 @@ async fn add_workshop_image(
     }))
 }
 
-async fn remove_workshop_image(
+#[utoipa::path(
+    delete,
+    path = "/api/v1/workshops/{id}/images/{image_id}",
+    tag = "workshops",
+    params(
+        ("id" = Uuid, Path, description = "Workshop ID"),
+        ("image_id" = Uuid, Path, description = "Image ID"),
+    ),
+    responses(
+        (status = 200, description = "Image removed", body = serde_json::Value),
+    ),
+)]
+pub(crate) async fn remove_workshop_image(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Path((_workshop_id, image_id)): Path<(uuid::Uuid, uuid::Uuid)>,
