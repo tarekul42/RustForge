@@ -21,13 +21,13 @@ impl OtpRepository for PostgresOtpRepository {
         code_hash: &str,
         expires_at: &chrono::DateTime<chrono::Utc>,
     ) -> Result<(), DomainError> {
-        sqlx::query!(
+        sqlx::query(
             r#"INSERT INTO otp_codes (id, email, code_hash, expires_at)
                VALUES (gen_random_uuid(), $1, $2, $3)"#,
-            email,
-            code_hash,
-            expires_at,
         )
+        .bind(email)
+        .bind(code_hash)
+        .bind(expires_at)
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to create otp code: {e}")))?;
@@ -38,13 +38,12 @@ impl OtpRepository for PostgresOtpRepository {
         &self,
         email: &str,
     ) -> Result<Option<(String, i32, chrono::DateTime<chrono::Utc>)>, DomainError> {
-        let row = sqlx::query_as!(
-            OtpRow,
+        let row = sqlx::query_as::<_, OtpRow>(
             r#"SELECT code_hash, attempts, expires_at
                FROM otp_codes WHERE email = $1
                ORDER BY created_at DESC LIMIT 1"#,
-            email,
         )
+        .bind(email)
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to find otp code: {e}")))?;
@@ -52,20 +51,19 @@ impl OtpRepository for PostgresOtpRepository {
     }
 
     async fn increment_attempts(&self, email: &str) -> Result<(), DomainError> {
-        sqlx::query!(
-            "UPDATE otp_codes SET attempts = attempts + 1 WHERE email = $1",
-            email,
-        )
-        .execute(&self.pool)
-        .await
-        .map_err(|e| {
-            DomainError::infrastructure(format!("failed to increment otp attempts: {e}"))
-        })?;
+        sqlx::query("UPDATE otp_codes SET attempts = attempts + 1 WHERE email = $1")
+            .bind(email)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| {
+                DomainError::infrastructure(format!("failed to increment otp attempts: {e}"))
+            })?;
         Ok(())
     }
 
     async fn delete(&self, email: &str) -> Result<(), DomainError> {
-        sqlx::query!("DELETE FROM otp_codes WHERE email = $1", email)
+        sqlx::query("DELETE FROM otp_codes WHERE email = $1")
+            .bind(email)
             .execute(&self.pool)
             .await
             .map_err(|e| DomainError::infrastructure(format!("failed to delete otp code: {e}")))?;
@@ -73,7 +71,7 @@ impl OtpRepository for PostgresOtpRepository {
     }
 
     async fn cleanup_expired(&self) -> Result<u64, DomainError> {
-        let result = sqlx::query!("DELETE FROM otp_codes WHERE expires_at < NOW()")
+        let result = sqlx::query("DELETE FROM otp_codes WHERE expires_at < NOW()")
             .execute(&self.pool)
             .await
             .map_err(|e| {

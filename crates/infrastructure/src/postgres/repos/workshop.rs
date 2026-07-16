@@ -18,28 +18,28 @@ impl PostgresWorkshopRepository {
 #[async_trait::async_trait]
 impl WorkshopRepository for PostgresWorkshopRepository {
     async fn create(&self, workshop: &Workshop) -> Result<(), DomainError> {
-        sqlx::query!(
+        sqlx::query(
             r#"INSERT INTO workshops (id, title, slug, description, location, price_cents,
                start_date, end_date, max_seats, current_enrollments, min_age,
                category_id, level_id, created_by, created_at, updated_at)
                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)"#,
-            workshop.id().into_uuid(),
-            workshop.title(),
-            workshop.slug(),
-            workshop.description(),
-            workshop.location(),
-            workshop.price_cents(),
-            workshop.start_date(),
-            workshop.end_date(),
-            workshop.max_seats(),
-            workshop.current_enrollments(),
-            workshop.min_age(),
-            workshop.category_id().into_uuid(),
-            workshop.level_id().into_uuid(),
-            workshop.created_by().into_uuid(),
-            workshop.created_at(),
-            workshop.updated_at(),
         )
+        .bind(workshop.id().into_uuid())
+        .bind(workshop.title())
+        .bind(workshop.slug())
+        .bind(workshop.description())
+        .bind(workshop.location())
+        .bind(workshop.price_cents())
+        .bind(workshop.start_date())
+        .bind(workshop.end_date())
+        .bind(workshop.max_seats())
+        .bind(workshop.current_enrollments())
+        .bind(workshop.min_age())
+        .bind(workshop.category_id().into_uuid())
+        .bind(workshop.level_id().into_uuid())
+        .bind(workshop.created_by().into_uuid())
+        .bind(workshop.created_at())
+        .bind(workshop.updated_at())
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to create workshop: {e}")))?;
@@ -47,14 +47,13 @@ impl WorkshopRepository for PostgresWorkshopRepository {
     }
 
     async fn find_by_id(&self, id: WorkshopId) -> Result<Option<Workshop>, DomainError> {
-        let row = sqlx::query_as!(
-            WorkshopRow,
+        let row = sqlx::query_as::<_, WorkshopRow>(
             r#"SELECT id, title, slug, description, location, price_cents,
                       start_date, end_date, max_seats, current_enrollments, min_age,
                       category_id, level_id, created_by, created_at, updated_at
                FROM workshops WHERE id = $1"#,
-            id.into_uuid(),
         )
+        .bind(id.into_uuid())
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to find workshop: {e}")))?;
@@ -62,14 +61,13 @@ impl WorkshopRepository for PostgresWorkshopRepository {
     }
 
     async fn find_by_slug(&self, slug: &str) -> Result<Option<Workshop>, DomainError> {
-        let row = sqlx::query_as!(
-            WorkshopRow,
+        let row = sqlx::query_as::<_, WorkshopRow>(
             r#"SELECT id, title, slug, description, location, price_cents,
                       start_date, end_date, max_seats, current_enrollments, min_age,
                       category_id, level_id, created_by, created_at, updated_at
                FROM workshops WHERE slug = $1"#,
-            slug,
         )
+        .bind(slug)
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| {
@@ -79,27 +77,27 @@ impl WorkshopRepository for PostgresWorkshopRepository {
     }
 
     async fn update(&self, workshop: &Workshop) -> Result<(), DomainError> {
-        sqlx::query!(
+        sqlx::query(
             r#"UPDATE workshops SET title = $2, slug = $3, description = $4, location = $5,
                price_cents = $6, start_date = $7, end_date = $8, max_seats = $9,
                current_enrollments = $10, min_age = $11, category_id = $12, level_id = $13,
                updated_at = $14
                WHERE id = $1"#,
-            workshop.id().into_uuid(),
-            workshop.title(),
-            workshop.slug(),
-            workshop.description(),
-            workshop.location(),
-            workshop.price_cents(),
-            workshop.start_date(),
-            workshop.end_date(),
-            workshop.max_seats(),
-            workshop.current_enrollments(),
-            workshop.min_age(),
-            workshop.category_id().into_uuid(),
-            workshop.level_id().into_uuid(),
-            workshop.updated_at(),
         )
+        .bind(workshop.id().into_uuid())
+        .bind(workshop.title())
+        .bind(workshop.slug())
+        .bind(workshop.description())
+        .bind(workshop.location())
+        .bind(workshop.price_cents())
+        .bind(workshop.start_date())
+        .bind(workshop.end_date())
+        .bind(workshop.max_seats())
+        .bind(workshop.current_enrollments())
+        .bind(workshop.min_age())
+        .bind(workshop.category_id().into_uuid())
+        .bind(workshop.level_id().into_uuid())
+        .bind(workshop.updated_at())
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to update workshop: {e}")))?;
@@ -107,7 +105,8 @@ impl WorkshopRepository for PostgresWorkshopRepository {
     }
 
     async fn delete(&self, id: WorkshopId) -> Result<(), DomainError> {
-        sqlx::query!("DELETE FROM workshops WHERE id = $1", id.into_uuid())
+        sqlx::query("DELETE FROM workshops WHERE id = $1")
+            .bind(id.into_uuid())
             .execute(&self.pool)
             .await
             .map_err(|e| DomainError::infrastructure(format!("failed to delete workshop: {e}")))?;
@@ -115,12 +114,11 @@ impl WorkshopRepository for PostgresWorkshopRepository {
     }
 
     async fn get_images(&self, workshop_id: WorkshopId) -> Result<Vec<WorkshopImage>, DomainError> {
-        let rows = sqlx::query_as!(
-            WorkshopImageRow,
+        let rows = sqlx::query_as::<_, WorkshopImageRow>(
             r#"SELECT id, workshop_id, url, s3_key, created_at
                FROM workshop_images WHERE workshop_id = $1 ORDER BY created_at"#,
-            workshop_id.into_uuid(),
         )
+        .bind(workshop_id.into_uuid())
         .fetch_all(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to get workshop images: {e}")))?;
@@ -137,15 +135,15 @@ impl WorkshopRepository for PostgresWorkshopRepository {
     ) -> Result<WorkshopImage, DomainError> {
         let id = uuid::Uuid::now_v7();
         let now = chrono::Utc::now();
-        sqlx::query!(
+        sqlx::query(
             r#"INSERT INTO workshop_images (id, workshop_id, url, s3_key, created_at)
                VALUES ($1, $2, $3, $4, $5)"#,
-            id,
-            workshop_id.into_uuid(),
-            url,
-            s3_key,
-            now,
         )
+        .bind(id)
+        .bind(workshop_id.into_uuid())
+        .bind(url)
+        .bind(s3_key)
+        .bind(now)
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to add workshop image: {e}")))?;
@@ -159,21 +157,18 @@ impl WorkshopRepository for PostgresWorkshopRepository {
     }
 
     async fn remove_image(&self, image_id: WorkshopImageId) -> Result<(), DomainError> {
-        sqlx::query!(
-            "DELETE FROM workshop_images WHERE id = $1",
-            image_id.into_uuid()
-        )
-        .execute(&self.pool)
-        .await
-        .map_err(|e| {
-            DomainError::infrastructure(format!("failed to remove workshop image: {e}"))
-        })?;
+        sqlx::query("DELETE FROM workshop_images WHERE id = $1")
+            .bind(image_id.into_uuid())
+            .execute(&self.pool)
+            .await
+            .map_err(|e| {
+                DomainError::infrastructure(format!("failed to remove workshop image: {e}"))
+            })?;
         Ok(())
     }
 
     async fn find_all(&self) -> Result<Vec<Workshop>, DomainError> {
-        let rows = sqlx::query_as!(
-            WorkshopRow,
+        let rows = sqlx::query_as::<_, WorkshopRow>(
             r#"SELECT id, title, slug, description, location, price_cents,
                       start_date, end_date, max_seats, current_enrollments, min_age,
                       category_id, level_id, created_by, created_at, updated_at
@@ -189,16 +184,15 @@ impl WorkshopRepository for PostgresWorkshopRepository {
         &self,
         workshop_id: WorkshopId,
     ) -> Result<Option<Workshop>, DomainError> {
-        let row = sqlx::query_as!(
-            WorkshopRow,
+        let row = sqlx::query_as::<_, WorkshopRow>(
             r#"UPDATE workshops
                SET current_enrollments = current_enrollments + 1, updated_at = NOW()
                WHERE id = $1 AND (max_seats IS NULL OR current_enrollments < max_seats)
                RETURNING id, title, slug, description, location, price_cents,
                          start_date, end_date, max_seats, current_enrollments, min_age,
                          category_id, level_id, created_by, created_at, updated_at"#,
-            workshop_id.into_uuid(),
         )
+        .bind(workshop_id.into_uuid())
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to reserve seat: {e}")))?;
@@ -206,12 +200,12 @@ impl WorkshopRepository for PostgresWorkshopRepository {
     }
 
     async fn release_seat_atomic(&self, workshop_id: WorkshopId) -> Result<(), DomainError> {
-        sqlx::query!(
+        sqlx::query(
             r#"UPDATE workshops
                SET current_enrollments = GREATEST(current_enrollments - 1, 0), updated_at = NOW()
                WHERE id = $1 AND current_enrollments > 0"#,
-            workshop_id.into_uuid(),
         )
+        .bind(workshop_id.into_uuid())
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to release seat: {e}")))?;

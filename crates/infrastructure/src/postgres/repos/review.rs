@@ -18,19 +18,19 @@ impl PostgresReviewRepository {
 #[async_trait::async_trait]
 impl ReviewRepository for PostgresReviewRepository {
     async fn create(&self, review: &Review) -> Result<(), DomainError> {
-        sqlx::query!(
+        sqlx::query(
             r#"INSERT INTO reviews (id, user_id, workshop_id, rating, title, content, status, created_at, updated_at)
                VALUES ($1, $2, $3, $4, $5, $6, $7::text::review_status, $8, $9)"#,
-            review.id().into_uuid(),
-            review.user_id().into_uuid(),
-            review.workshop_id().into_uuid(),
-            review.rating(),
-            review.title(),
-            review.content(),
-            review.status().as_str(),
-            review.created_at(),
-            review.updated_at(),
         )
+        .bind(review.id().into_uuid())
+        .bind(review.user_id().into_uuid())
+        .bind(review.workshop_id().into_uuid())
+        .bind(review.rating())
+        .bind(review.title())
+        .bind(review.content())
+        .bind(review.status().as_str())
+        .bind(review.created_at())
+        .bind(review.updated_at())
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to create review: {e}")))?;
@@ -38,12 +38,11 @@ impl ReviewRepository for PostgresReviewRepository {
     }
 
     async fn find_by_id(&self, id: ReviewId) -> Result<Option<Review>, DomainError> {
-        let row = sqlx::query_as!(
-            ReviewRow,
-            r#"SELECT id, user_id, workshop_id, rating, title, content, status::text as "status!", created_at, updated_at
+        let row = sqlx::query_as::<_, ReviewRow>(
+            r#"SELECT id, user_id, workshop_id, rating, title, content, status::text as status, created_at, updated_at
                FROM reviews WHERE id = $1"#,
-            id.into_uuid(),
         )
+        .bind(id.into_uuid())
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to find review: {e}")))?;
@@ -55,13 +54,12 @@ impl ReviewRepository for PostgresReviewRepository {
         user_id: UserId,
         workshop_id: WorkshopId,
     ) -> Result<Option<Review>, DomainError> {
-        let row = sqlx::query_as!(
-            ReviewRow,
-            r#"SELECT id, user_id, workshop_id, rating, title, content, status::text as "status!", created_at, updated_at
+        let row = sqlx::query_as::<_, ReviewRow>(
+            r#"SELECT id, user_id, workshop_id, rating, title, content, status::text as status, created_at, updated_at
                FROM reviews WHERE user_id = $1 AND workshop_id = $2"#,
-            user_id.into_uuid(),
-            workshop_id.into_uuid(),
         )
+        .bind(user_id.into_uuid())
+        .bind(workshop_id.into_uuid())
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to find review: {e}")))?;
@@ -69,13 +67,12 @@ impl ReviewRepository for PostgresReviewRepository {
     }
 
     async fn find_by_workshop(&self, workshop_id: WorkshopId) -> Result<Vec<Review>, DomainError> {
-        let rows = sqlx::query_as!(
-            ReviewRow,
-            r#"SELECT id, user_id, workshop_id, rating, title, content, status::text as "status!", created_at, updated_at
+        let rows = sqlx::query_as::<_, ReviewRow>(
+            r#"SELECT id, user_id, workshop_id, rating, title, content, status::text as status, created_at, updated_at
                FROM reviews WHERE workshop_id = $1
                ORDER BY created_at DESC"#,
-            workshop_id.into_uuid(),
         )
+        .bind(workshop_id.into_uuid())
         .fetch_all(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to find reviews: {e}")))?;
@@ -83,16 +80,16 @@ impl ReviewRepository for PostgresReviewRepository {
     }
 
     async fn update(&self, review: &Review) -> Result<(), DomainError> {
-        sqlx::query!(
+        sqlx::query(
             r#"UPDATE reviews SET rating = $2, title = $3, content = $4, status = $5::text::review_status, updated_at = $6
                WHERE id = $1"#,
-            review.id().into_uuid(),
-            review.rating(),
-            review.title(),
-            review.content(),
-            review.status().as_str(),
-            review.updated_at(),
         )
+        .bind(review.id().into_uuid())
+        .bind(review.rating())
+        .bind(review.title())
+        .bind(review.content())
+        .bind(review.status().as_str())
+        .bind(review.updated_at())
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to update review: {e}")))?;
@@ -100,7 +97,8 @@ impl ReviewRepository for PostgresReviewRepository {
     }
 
     async fn delete(&self, id: ReviewId) -> Result<(), DomainError> {
-        sqlx::query!("DELETE FROM reviews WHERE id = $1", id.into_uuid())
+        sqlx::query("DELETE FROM reviews WHERE id = $1")
+            .bind(id.into_uuid())
             .execute(&self.pool)
             .await
             .map_err(|e| DomainError::infrastructure(format!("failed to delete review: {e}")))?;

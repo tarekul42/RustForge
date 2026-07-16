@@ -17,14 +17,14 @@ impl PostgresLevelRepository {
 #[async_trait::async_trait]
 impl LevelRepository for PostgresLevelRepository {
     async fn create(&self, level: &Level) -> Result<(), DomainError> {
-        sqlx::query!(
+        sqlx::query(
             r#"INSERT INTO levels (id, name, created_at, updated_at)
                VALUES ($1, $2, $3, $4)"#,
-            level.id().into_uuid(),
-            level.name(),
-            level.created_at(),
-            level.updated_at(),
         )
+        .bind(level.id().into_uuid())
+        .bind(level.name())
+        .bind(level.created_at())
+        .bind(level.updated_at())
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to create level: {e}")))?;
@@ -32,12 +32,11 @@ impl LevelRepository for PostgresLevelRepository {
     }
 
     async fn find_by_id(&self, id: LevelId) -> Result<Option<Level>, DomainError> {
-        let row = sqlx::query_as!(
-            LevelRow,
+        let row = sqlx::query_as::<_, LevelRow>(
             r#"SELECT id, name, created_at, updated_at
                FROM levels WHERE id = $1"#,
-            id.into_uuid(),
         )
+        .bind(id.into_uuid())
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to find level: {e}")))?;
@@ -45,8 +44,7 @@ impl LevelRepository for PostgresLevelRepository {
     }
 
     async fn find_all(&self) -> Result<Vec<Level>, DomainError> {
-        let rows = sqlx::query_as!(
-            LevelRow,
+        let rows = sqlx::query_as::<_, LevelRow>(
             r#"SELECT id, name, created_at, updated_at
                FROM levels ORDER BY name"#,
         )
@@ -57,20 +55,19 @@ impl LevelRepository for PostgresLevelRepository {
     }
 
     async fn update(&self, level: &Level) -> Result<(), DomainError> {
-        sqlx::query!(
-            r#"UPDATE levels SET name = $2, updated_at = $3 WHERE id = $1"#,
-            level.id().into_uuid(),
-            level.name(),
-            level.updated_at(),
-        )
-        .execute(&self.pool)
-        .await
-        .map_err(|e| DomainError::infrastructure(format!("failed to update level: {e}")))?;
+        sqlx::query(r#"UPDATE levels SET name = $2, updated_at = $3 WHERE id = $1"#)
+            .bind(level.id().into_uuid())
+            .bind(level.name())
+            .bind(level.updated_at())
+            .execute(&self.pool)
+            .await
+            .map_err(|e| DomainError::infrastructure(format!("failed to update level: {e}")))?;
         Ok(())
     }
 
     async fn delete(&self, id: LevelId) -> Result<(), DomainError> {
-        sqlx::query!("DELETE FROM levels WHERE id = $1", id.into_uuid())
+        sqlx::query("DELETE FROM levels WHERE id = $1")
+            .bind(id.into_uuid())
             .execute(&self.pool)
             .await
             .map_err(|e| DomainError::infrastructure(format!("failed to delete level: {e}")))?;

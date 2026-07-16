@@ -23,14 +23,14 @@ impl SessionRepository for PostgresSessionRepository {
         token_hash: &str,
         expires_at: &chrono::DateTime<chrono::Utc>,
     ) -> Result<(), DomainError> {
-        sqlx::query!(
+        sqlx::query(
             r#"INSERT INTO sessions (id, user_id, token_hash, expires_at)
                VALUES ($1, $2, $3, $4)"#,
-            session_id.into_uuid(),
-            user_id.into_uuid(),
-            token_hash,
-            expires_at,
         )
+        .bind(session_id.into_uuid())
+        .bind(user_id.into_uuid())
+        .bind(token_hash)
+        .bind(expires_at)
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to create session: {e}")))?;
@@ -41,11 +41,10 @@ impl SessionRepository for PostgresSessionRepository {
         &self,
         token_hash: &str,
     ) -> Result<Option<(SessionId, UserId, chrono::DateTime<chrono::Utc>)>, DomainError> {
-        let row = sqlx::query_as!(
-            SessionRow,
+        let row = sqlx::query_as::<_, SessionRow>(
             r#"SELECT id, user_id, expires_at FROM sessions WHERE token_hash = $1"#,
-            token_hash,
         )
+        .bind(token_hash)
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to find session: {e}")))?;
@@ -59,7 +58,8 @@ impl SessionRepository for PostgresSessionRepository {
     }
 
     async fn delete(&self, session_id: SessionId) -> Result<(), DomainError> {
-        sqlx::query!("DELETE FROM sessions WHERE id = $1", session_id.into_uuid())
+        sqlx::query("DELETE FROM sessions WHERE id = $1")
+            .bind(session_id.into_uuid())
             .execute(&self.pool)
             .await
             .map_err(|e| DomainError::infrastructure(format!("failed to delete session: {e}")))?;
@@ -67,18 +67,16 @@ impl SessionRepository for PostgresSessionRepository {
     }
 
     async fn delete_all_for_user(&self, user_id: UserId) -> Result<(), DomainError> {
-        sqlx::query!(
-            "DELETE FROM sessions WHERE user_id = $1",
-            user_id.into_uuid()
-        )
-        .execute(&self.pool)
-        .await
-        .map_err(|e| DomainError::infrastructure(format!("failed to delete sessions: {e}")))?;
+        sqlx::query("DELETE FROM sessions WHERE user_id = $1")
+            .bind(user_id.into_uuid())
+            .execute(&self.pool)
+            .await
+            .map_err(|e| DomainError::infrastructure(format!("failed to delete sessions: {e}")))?;
         Ok(())
     }
 
     async fn cleanup_expired(&self) -> Result<u64, DomainError> {
-        let result = sqlx::query!("DELETE FROM sessions WHERE expires_at < NOW()")
+        let result = sqlx::query("DELETE FROM sessions WHERE expires_at < NOW()")
             .execute(&self.pool)
             .await
             .map_err(|e| DomainError::infrastructure(format!("failed to cleanup sessions: {e}")))?;

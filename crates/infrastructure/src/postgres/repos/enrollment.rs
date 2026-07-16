@@ -18,18 +18,18 @@ impl PostgresEnrollmentRepository {
 #[async_trait::async_trait]
 impl EnrollmentRepository for PostgresEnrollmentRepository {
     async fn create(&self, enrollment: &Enrollment) -> Result<(), DomainError> {
-        sqlx::query!(
+        sqlx::query(
             r#"INSERT INTO enrollments (id, user_id, workshop_id, payment_id, student_count, status, created_at, updated_at)
                VALUES ($1, $2, $3, $4, $5, $6::text::enrollment_status, $7, $8)"#,
-            enrollment.id().into_uuid(),
-            enrollment.user_id().into_uuid(),
-            enrollment.workshop_id().into_uuid(),
-            enrollment.payment_id().map(|p| p.into_uuid()),
-            enrollment.student_count(),
-            enrollment.status().as_str(),
-            enrollment.created_at(),
-            enrollment.updated_at(),
         )
+        .bind(enrollment.id().into_uuid())
+        .bind(enrollment.user_id().into_uuid())
+        .bind(enrollment.workshop_id().into_uuid())
+        .bind(enrollment.payment_id().map(|p| p.into_uuid()))
+        .bind(enrollment.student_count())
+        .bind(enrollment.status().as_str())
+        .bind(enrollment.created_at())
+        .bind(enrollment.updated_at())
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to create enrollment: {e}")))?;
@@ -37,12 +37,11 @@ impl EnrollmentRepository for PostgresEnrollmentRepository {
     }
 
     async fn find_by_id(&self, id: EnrollmentId) -> Result<Option<Enrollment>, DomainError> {
-        let row = sqlx::query_as!(
-            EnrollmentRow,
-            r#"SELECT id, user_id, workshop_id, payment_id, student_count, status::text as "status!", created_at, updated_at
+        let row = sqlx::query_as::<_, EnrollmentRow>(
+            r#"SELECT id, user_id, workshop_id, payment_id, student_count, status::text as status, created_at, updated_at
                FROM enrollments WHERE id = $1"#,
-            id.into_uuid(),
         )
+        .bind(id.into_uuid())
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to find enrollment: {e}")))?;
@@ -50,14 +49,13 @@ impl EnrollmentRepository for PostgresEnrollmentRepository {
     }
 
     async fn find_by_user(&self, user_id: UserId) -> Result<Vec<Enrollment>, DomainError> {
-        let rows = sqlx::query_as!(
-            EnrollmentRow,
-            r#"SELECT id, user_id, workshop_id, payment_id, student_count, status::text as "status!", created_at, updated_at
+        let rows = sqlx::query_as::<_, EnrollmentRow>(
+            r#"SELECT id, user_id, workshop_id, payment_id, student_count, status::text as status, created_at, updated_at
                FROM enrollments
                WHERE user_id = $1
                ORDER BY created_at DESC"#,
-            user_id.into_uuid(),
         )
+        .bind(user_id.into_uuid())
         .fetch_all(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to find enrollments: {e}")))?;
@@ -69,15 +67,14 @@ impl EnrollmentRepository for PostgresEnrollmentRepository {
         user_id: UserId,
         workshop_id: WorkshopId,
     ) -> Result<Vec<Enrollment>, DomainError> {
-        let rows = sqlx::query_as!(
-            EnrollmentRow,
-            r#"SELECT id, user_id, workshop_id, payment_id, student_count, status::text as "status!", created_at, updated_at
+        let rows = sqlx::query_as::<_, EnrollmentRow>(
+            r#"SELECT id, user_id, workshop_id, payment_id, student_count, status::text as status, created_at, updated_at
                FROM enrollments
                WHERE user_id = $1 AND workshop_id = $2
                ORDER BY created_at DESC"#,
-            user_id.into_uuid(),
-            workshop_id.into_uuid(),
         )
+        .bind(user_id.into_uuid())
+        .bind(workshop_id.into_uuid())
         .fetch_all(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to find enrollments: {e}")))?;
@@ -85,15 +82,15 @@ impl EnrollmentRepository for PostgresEnrollmentRepository {
     }
 
     async fn update(&self, enrollment: &Enrollment) -> Result<(), DomainError> {
-        sqlx::query!(
+        sqlx::query(
             r#"UPDATE enrollments SET payment_id = $2, student_count = $3, status = $4::text::enrollment_status, updated_at = $5
                WHERE id = $1"#,
-            enrollment.id().into_uuid(),
-            enrollment.payment_id().map(|p| p.into_uuid()),
-            enrollment.student_count(),
-            enrollment.status().as_str(),
-            enrollment.updated_at(),
         )
+        .bind(enrollment.id().into_uuid())
+        .bind(enrollment.payment_id().map(|p| p.into_uuid()))
+        .bind(enrollment.student_count())
+        .bind(enrollment.status().as_str())
+        .bind(enrollment.updated_at())
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to update enrollment: {e}")))?;
@@ -106,13 +103,13 @@ impl EnrollmentRepository for PostgresEnrollmentRepository {
         from_status: &str,
         to_status: &str,
     ) -> Result<bool, DomainError> {
-        let rows = sqlx::query!(
+        let rows = sqlx::query(
             r#"UPDATE enrollments SET status = $3::text::enrollment_status, updated_at = NOW()
                WHERE id = $1 AND status = $2::text::enrollment_status"#,
-            id.into_uuid(),
-            from_status,
-            to_status,
         )
+        .bind(id.into_uuid())
+        .bind(from_status)
+        .bind(to_status)
         .execute(&self.pool)
         .await
         .map_err(|e| {
@@ -122,21 +119,22 @@ impl EnrollmentRepository for PostgresEnrollmentRepository {
     }
 
     async fn count_active_for_workshop(&self, workshop_id: WorkshopId) -> Result<i64, DomainError> {
-        let row = sqlx::query!(
-            r#"SELECT COUNT(*) as "count!" FROM enrollments
+        let count: i64 = sqlx::query_scalar(
+            r#"SELECT COUNT(*) FROM enrollments
                WHERE workshop_id = $1 AND status IN ('pending', 'complete')"#,
-            workshop_id.into_uuid(),
         )
+        .bind(workshop_id.into_uuid())
         .fetch_one(&self.pool)
         .await
         .map_err(|e| {
             DomainError::infrastructure(format!("failed to count active enrollments: {e}"))
         })?;
-        Ok(row.count)
+        Ok(count)
     }
 
     async fn delete(&self, id: EnrollmentId) -> Result<(), DomainError> {
-        sqlx::query!("DELETE FROM enrollments WHERE id = $1", id.into_uuid())
+        sqlx::query("DELETE FROM enrollments WHERE id = $1")
+            .bind(id.into_uuid())
             .execute(&self.pool)
             .await
             .map_err(|e| {

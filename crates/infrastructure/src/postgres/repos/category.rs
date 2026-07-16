@@ -17,17 +17,17 @@ impl PostgresCategoryRepository {
 #[async_trait::async_trait]
 impl CategoryRepository for PostgresCategoryRepository {
     async fn create(&self, category: &Category) -> Result<(), DomainError> {
-        sqlx::query!(
+        sqlx::query(
             r#"INSERT INTO categories (id, name, slug, description, thumbnail_url, created_at, updated_at)
                VALUES ($1, $2, $3, $4, $5, $6, $7)"#,
-            category.id().into_uuid(),
-            category.name(),
-            category.slug(),
-            category.description(),
-            category.thumbnail_url(),
-            category.created_at(),
-            category.updated_at(),
         )
+        .bind(category.id().into_uuid())
+        .bind(category.name())
+        .bind(category.slug())
+        .bind(category.description())
+        .bind(category.thumbnail_url())
+        .bind(category.created_at())
+        .bind(category.updated_at())
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to create category: {e}")))?;
@@ -35,12 +35,11 @@ impl CategoryRepository for PostgresCategoryRepository {
     }
 
     async fn find_by_id(&self, id: CategoryId) -> Result<Option<Category>, DomainError> {
-        let row = sqlx::query_as!(
-            CategoryRow,
+        let row = sqlx::query_as::<_, CategoryRow>(
             r#"SELECT id, name, slug, description, thumbnail_url, created_at, updated_at
                FROM categories WHERE id = $1"#,
-            id.into_uuid(),
         )
+        .bind(id.into_uuid())
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to find category: {e}")))?;
@@ -48,12 +47,11 @@ impl CategoryRepository for PostgresCategoryRepository {
     }
 
     async fn find_by_slug(&self, slug: &str) -> Result<Option<Category>, DomainError> {
-        let row = sqlx::query_as!(
-            CategoryRow,
+        let row = sqlx::query_as::<_, CategoryRow>(
             r#"SELECT id, name, slug, description, thumbnail_url, created_at, updated_at
                FROM categories WHERE slug = $1"#,
-            slug,
         )
+        .bind(slug)
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| {
@@ -63,8 +61,7 @@ impl CategoryRepository for PostgresCategoryRepository {
     }
 
     async fn find_all(&self) -> Result<Vec<Category>, DomainError> {
-        let rows = sqlx::query_as!(
-            CategoryRow,
+        let rows = sqlx::query_as::<_, CategoryRow>(
             r#"SELECT id, name, slug, description, thumbnail_url, created_at, updated_at
                FROM categories ORDER BY name"#,
         )
@@ -75,16 +72,16 @@ impl CategoryRepository for PostgresCategoryRepository {
     }
 
     async fn update(&self, category: &Category) -> Result<(), DomainError> {
-        sqlx::query!(
+        sqlx::query(
             r#"UPDATE categories SET name = $2, slug = $3, description = $4, thumbnail_url = $5, updated_at = $6
                WHERE id = $1"#,
-            category.id().into_uuid(),
-            category.name(),
-            category.slug(),
-            category.description(),
-            category.thumbnail_url(),
-            category.updated_at(),
         )
+        .bind(category.id().into_uuid())
+        .bind(category.name())
+        .bind(category.slug())
+        .bind(category.description())
+        .bind(category.thumbnail_url())
+        .bind(category.updated_at())
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to update category: {e}")))?;
@@ -92,7 +89,8 @@ impl CategoryRepository for PostgresCategoryRepository {
     }
 
     async fn delete(&self, id: CategoryId) -> Result<(), DomainError> {
-        sqlx::query!("DELETE FROM categories WHERE id = $1", id.into_uuid())
+        sqlx::query("DELETE FROM categories WHERE id = $1")
+            .bind(id.into_uuid())
             .execute(&self.pool)
             .await
             .map_err(|e| DomainError::infrastructure(format!("failed to delete category: {e}")))?;

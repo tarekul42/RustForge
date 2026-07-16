@@ -19,18 +19,18 @@ impl PostgresContactRepository {
 #[async_trait::async_trait]
 impl ContactRepository for PostgresContactRepository {
     async fn create(&self, contact: &Contact) -> Result<(), DomainError> {
-        sqlx::query!(
+        sqlx::query(
             r#"INSERT INTO contacts (id, name, email, subject, message, is_read, created_at, updated_at)
                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"#,
-            contact.id().into_uuid(),
-            contact.name(),
-            contact.email().as_str(),
-            contact.subject(),
-            contact.message(),
-            contact.is_read(),
-            contact.created_at(),
-            contact.updated_at(),
         )
+        .bind(contact.id().into_uuid())
+        .bind(contact.name())
+        .bind(contact.email().as_str())
+        .bind(contact.subject())
+        .bind(contact.message())
+        .bind(contact.is_read())
+        .bind(contact.created_at())
+        .bind(contact.updated_at())
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to create contact: {e}")))?;
@@ -38,12 +38,11 @@ impl ContactRepository for PostgresContactRepository {
     }
 
     async fn find_by_id(&self, id: ContactId) -> Result<Option<Contact>, DomainError> {
-        let row = sqlx::query_as!(
-            ContactRow,
+        let row = sqlx::query_as::<_, ContactRow>(
             r#"SELECT id, name, email, subject, message, is_read, created_at, updated_at
                FROM contacts WHERE id = $1"#,
-            id.into_uuid(),
         )
+        .bind(id.into_uuid())
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to find contact: {e}")))?;
@@ -53,19 +52,17 @@ impl ContactRepository for PostgresContactRepository {
     async fn list(&self, is_read: Option<bool>) -> Result<Vec<Contact>, DomainError> {
         let rows = match is_read {
             Some(read) => {
-                sqlx::query_as!(
-                    ContactRow,
+                sqlx::query_as::<_, ContactRow>(
                     r#"SELECT id, name, email, subject, message, is_read, created_at, updated_at
                        FROM contacts WHERE is_read = $1
                        ORDER BY created_at DESC"#,
-                    read,
                 )
+                .bind(read)
                 .fetch_all(&self.pool)
                 .await
             }
             None => {
-                sqlx::query_as!(
-                    ContactRow,
+                sqlx::query_as::<_, ContactRow>(
                     r#"SELECT id, name, email, subject, message, is_read, created_at, updated_at
                        FROM contacts
                        ORDER BY created_at DESC"#,
@@ -79,17 +76,17 @@ impl ContactRepository for PostgresContactRepository {
     }
 
     async fn update(&self, contact: &Contact) -> Result<(), DomainError> {
-        sqlx::query!(
+        sqlx::query(
             r#"UPDATE contacts SET name = $2, email = $3, subject = $4, message = $5, is_read = $6, updated_at = $7
                WHERE id = $1"#,
-            contact.id().into_uuid(),
-            contact.name(),
-            contact.email().as_str(),
-            contact.subject(),
-            contact.message(),
-            contact.is_read(),
-            contact.updated_at(),
         )
+        .bind(contact.id().into_uuid())
+        .bind(contact.name())
+        .bind(contact.email().as_str())
+        .bind(contact.subject())
+        .bind(contact.message())
+        .bind(contact.is_read())
+        .bind(contact.updated_at())
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to update contact: {e}")))?;
@@ -97,7 +94,8 @@ impl ContactRepository for PostgresContactRepository {
     }
 
     async fn delete(&self, id: ContactId) -> Result<(), DomainError> {
-        sqlx::query!("DELETE FROM contacts WHERE id = $1", id.into_uuid())
+        sqlx::query("DELETE FROM contacts WHERE id = $1")
+            .bind(id.into_uuid())
             .execute(&self.pool)
             .await
             .map_err(|e| DomainError::infrastructure(format!("failed to delete contact: {e}")))?;

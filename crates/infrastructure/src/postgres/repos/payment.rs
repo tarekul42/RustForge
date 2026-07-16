@@ -19,20 +19,20 @@ impl PostgresPaymentRepository {
 #[async_trait::async_trait]
 impl PaymentRepository for PostgresPaymentRepository {
     async fn create(&self, payment: &Payment) -> Result<(), DomainError> {
-        sqlx::query!(
+        sqlx::query(
             r#"INSERT INTO payments (id, enrollment_id, transaction_id, amount_cents,
                payment_gateway_data, invoice_url, status, created_at, updated_at)
                VALUES ($1, $2, $3, $4, $5, $6, $7::text::payment_status, $8, $9)"#,
-            payment.id().into_uuid(),
-            payment.enrollment_id().into_uuid(),
-            payment.transaction_id(),
-            payment.amount().cents(),
-            payment.payment_gateway_data().cloned(),
-            payment.invoice_url(),
-            payment.status().as_str(),
-            payment.created_at(),
-            payment.updated_at(),
         )
+        .bind(payment.id().into_uuid())
+        .bind(payment.enrollment_id().into_uuid())
+        .bind(payment.transaction_id())
+        .bind(payment.amount().cents())
+        .bind(payment.payment_gateway_data().cloned())
+        .bind(payment.invoice_url())
+        .bind(payment.status().as_str())
+        .bind(payment.created_at())
+        .bind(payment.updated_at())
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to create payment: {e}")))?;
@@ -40,13 +40,12 @@ impl PaymentRepository for PostgresPaymentRepository {
     }
 
     async fn find_by_id(&self, id: PaymentId) -> Result<Option<Payment>, DomainError> {
-        let row = sqlx::query_as!(
-            PaymentRow,
+        let row = sqlx::query_as::<_, PaymentRow>(
             r#"SELECT id, enrollment_id, transaction_id, amount_cents,
-                      payment_gateway_data, invoice_url, status::text as "status!", created_at, updated_at
+                      payment_gateway_data, invoice_url, status::text as status, created_at, updated_at
                FROM payments WHERE id = $1"#,
-            id.into_uuid(),
         )
+        .bind(id.into_uuid())
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to find payment: {e}")))?;
@@ -57,13 +56,12 @@ impl PaymentRepository for PostgresPaymentRepository {
         &self,
         enrollment_id: EnrollmentId,
     ) -> Result<Option<Payment>, DomainError> {
-        let row = sqlx::query_as!(
-            PaymentRow,
+        let row = sqlx::query_as::<_, PaymentRow>(
             r#"SELECT id, enrollment_id, transaction_id, amount_cents,
-                      payment_gateway_data, invoice_url, status::text as "status!", created_at, updated_at
+                      payment_gateway_data, invoice_url, status::text as status, created_at, updated_at
                FROM payments WHERE enrollment_id = $1"#,
-            enrollment_id.into_uuid(),
         )
+        .bind(enrollment_id.into_uuid())
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| {
@@ -76,13 +74,12 @@ impl PaymentRepository for PostgresPaymentRepository {
         &self,
         transaction_id: &str,
     ) -> Result<Option<Payment>, DomainError> {
-        let row = sqlx::query_as!(
-            PaymentRow,
+        let row = sqlx::query_as::<_, PaymentRow>(
             r#"SELECT id, enrollment_id, transaction_id, amount_cents,
-                      payment_gateway_data, invoice_url, status::text as "status!", created_at, updated_at
+                      payment_gateway_data, invoice_url, status::text as status, created_at, updated_at
                FROM payments WHERE transaction_id = $1"#,
-            transaction_id,
         )
+        .bind(transaction_id)
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| {
@@ -97,13 +94,13 @@ impl PaymentRepository for PostgresPaymentRepository {
         from_status: &str,
         to_status: &str,
     ) -> Result<bool, DomainError> {
-        let rows = sqlx::query!(
+        let rows = sqlx::query(
             r#"UPDATE payments SET status = $3::text::payment_status, updated_at = NOW()
                WHERE id = $1 AND status = $2::text::payment_status"#,
-            id.into_uuid(),
-            from_status,
-            to_status,
         )
+        .bind(id.into_uuid())
+        .bind(from_status)
+        .bind(to_status)
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to CAS update payment: {e}")))?;
@@ -122,17 +119,17 @@ impl PaymentRepository for PostgresPaymentRepository {
     }
 
     async fn update(&self, payment: &Payment) -> Result<(), DomainError> {
-        sqlx::query!(
+        sqlx::query(
             r#"UPDATE payments SET amount_cents = $2, payment_gateway_data = $3,
                invoice_url = $4, status = $5::text::payment_status, updated_at = $6
                WHERE id = $1"#,
-            payment.id().into_uuid(),
-            payment.amount().cents(),
-            payment.payment_gateway_data().cloned(),
-            payment.invoice_url(),
-            payment.status().as_str(),
-            payment.updated_at(),
         )
+        .bind(payment.id().into_uuid())
+        .bind(payment.amount().cents())
+        .bind(payment.payment_gateway_data().cloned())
+        .bind(payment.invoice_url())
+        .bind(payment.status().as_str())
+        .bind(payment.updated_at())
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::infrastructure(format!("failed to update payment: {e}")))?;

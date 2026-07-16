@@ -17,31 +17,27 @@ impl PostgresStatsRepository {
 #[async_trait::async_trait]
 impl StatsRepository for PostgresStatsRepository {
     async fn platform_stats(&self) -> Result<PlatformStats, DomainError> {
-        let users_row = sqlx::query!(r#"SELECT COUNT(*) as "count!" FROM users"#)
+        let total_users: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users")
             .fetch_one(&self.pool)
             .await
             .map_err(|e| DomainError::infrastructure(format!("failed to count users: {e}")))?;
-        let total_users = users_row.count;
 
-        let workshops_row = sqlx::query!(r#"SELECT COUNT(*) as "count!" FROM workshops"#)
+        let total_workshops: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM workshops")
             .fetch_one(&self.pool)
             .await
             .map_err(|e| DomainError::infrastructure(format!("failed to count workshops: {e}")))?;
-        let total_workshops = workshops_row.count;
 
-        let enrollments_row = sqlx::query!(r#"SELECT COUNT(*) as "count!" FROM enrollments"#)
+        let total_enrollments: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM enrollments")
             .fetch_one(&self.pool)
             .await
             .map_err(|e| {
                 DomainError::infrastructure(format!("failed to count enrollments: {e}"))
             })?;
-        let total_enrollments = enrollments_row.count;
 
-        let reviews_row = sqlx::query!(r#"SELECT COUNT(*) as "count!" FROM reviews"#)
+        let total_reviews: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM reviews")
             .fetch_one(&self.pool)
             .await
             .map_err(|e| DomainError::infrastructure(format!("failed to count reviews: {e}")))?;
-        let total_reviews = reviews_row.count;
 
         Ok(PlatformStats {
             total_users,
@@ -52,11 +48,10 @@ impl StatsRepository for PostgresStatsRepository {
     }
 
     async fn workshop_ratings(&self) -> Result<Vec<WorkshopRating>, DomainError> {
-        let rows = sqlx::query_as!(
-            RatingRow,
+        let rows = sqlx::query_as::<_, RatingRow>(
             r#"SELECT workshop_id,
-                      COALESCE(AVG(rating::numeric), 0.0)::double precision AS "average_rating!",
-                      COUNT(*) AS "review_count!"
+                      COALESCE(AVG(rating::numeric), 0.0)::double precision AS average_rating,
+                      COUNT(*)::int8 AS review_count
                FROM reviews
                WHERE status = 'approved'
                GROUP BY workshop_id
