@@ -29,5 +29,4 @@ printpdf.workspace = true
 [dev-dependencies]
 testcontainers.workspace = true
 testcontainers-modules.workspace = true
-tokio.workspace = true
 
