@@ -149,11 +149,11 @@ impl<
             payment.set_status(PaymentStatus::Paid);
             payment.set_payment_gateway_data(Some(validation.raw_data));
 
-            if let Err(e) = sqlx::query!(
+            if let Err(e) = sqlx::query(
                 "UPDATE payments SET payment_gateway_data = $2, status = 'paid', updated_at = NOW() WHERE id = $1",
-                payment.id().into_uuid(),
-                payment.payment_gateway_data(),
             )
+            .bind(payment.id().into_uuid())
+            .bind(payment.payment_gateway_data())
             .execute(&mut *tx)
             .await
             {
