@@ -159,12 +159,15 @@ impl WorkshopRepository for PostgresWorkshopRepository {
     }
 
     async fn remove_image(&self, image_id: WorkshopImageId) -> Result<(), DomainError> {
-        sqlx::query!("DELETE FROM workshop_images WHERE id = $1", image_id.into_uuid())
-            .execute(&self.pool)
-            .await
-            .map_err(|e| {
-                DomainError::infrastructure(format!("failed to remove workshop image: {e}"))
-            })?;
+        sqlx::query!(
+            "DELETE FROM workshop_images WHERE id = $1",
+            image_id.into_uuid()
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            DomainError::infrastructure(format!("failed to remove workshop image: {e}"))
+        })?;
         Ok(())
     }
 

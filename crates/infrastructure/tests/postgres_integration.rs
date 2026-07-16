@@ -231,7 +231,11 @@ async fn pg_category_create_and_find() {
         let (cat, _) = Category::new("Rust".into(), "rust".into(), None, None);
         repo.create(&cat).await.expect("create");
         assert_eq!(
-            repo.find_by_id(cat.id()).await.expect("find").unwrap().name(),
+            repo.find_by_id(cat.id())
+                .await
+                .expect("find")
+                .unwrap()
+                .name(),
             "Rust"
         );
     })

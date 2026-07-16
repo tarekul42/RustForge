@@ -67,10 +67,13 @@ impl SessionRepository for PostgresSessionRepository {
     }
 
     async fn delete_all_for_user(&self, user_id: UserId) -> Result<(), DomainError> {
-        sqlx::query!("DELETE FROM sessions WHERE user_id = $1", user_id.into_uuid())
-            .execute(&self.pool)
-            .await
-            .map_err(|e| DomainError::infrastructure(format!("failed to delete sessions: {e}")))?;
+        sqlx::query!(
+            "DELETE FROM sessions WHERE user_id = $1",
+            user_id.into_uuid()
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| DomainError::infrastructure(format!("failed to delete sessions: {e}")))?;
         Ok(())
     }
 

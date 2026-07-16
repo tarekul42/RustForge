@@ -42,13 +42,10 @@ pub async fn set_request_id(request: Request, next: Next) -> Response {
 
     let mut response = next.run(request).instrument(span).await;
 
-    response
-        .headers_mut()
-        .insert(
-            "X-Request-Id",
-            HeaderValue::from_str(&request_id)
-                .unwrap_or_else(|_| HeaderValue::from_static("unknown")),
-        );
+    response.headers_mut().insert(
+        "X-Request-Id",
+        HeaderValue::from_str(&request_id).unwrap_or_else(|_| HeaderValue::from_static("unknown")),
+    );
 
     response
 }

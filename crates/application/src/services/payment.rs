@@ -165,7 +165,9 @@ impl<
                 .enrollment_repo
                 .find_by_id(payment.enrollment_id())
                 .await?
-                .ok_or_else(|| ApplicationError::not_found("Enrollment", payment.enrollment_id()))?;
+                .ok_or_else(|| {
+                    ApplicationError::not_found("Enrollment", payment.enrollment_id())
+                })?;
 
             let event = enrollment
                 .complete()
@@ -221,7 +223,9 @@ impl<
                 .enrollment_repo
                 .find_by_id(payment.enrollment_id())
                 .await?
-                .ok_or_else(|| ApplicationError::not_found("Enrollment", payment.enrollment_id()))?;
+                .ok_or_else(|| {
+                    ApplicationError::not_found("Enrollment", payment.enrollment_id())
+                })?;
 
             let event = enrollment
                 .complete()
@@ -239,7 +243,7 @@ impl<
 
             self.payment_repo.update(&payment).await?;
             self.publish_event(event).await?;
-            self.publish_event(            DomainEvent::PaymentStatusChanged {
+            self.publish_event(DomainEvent::PaymentStatusChanged {
                 payment_id: payment.id(),
                 from: "unpaid",
                 to: "paid",

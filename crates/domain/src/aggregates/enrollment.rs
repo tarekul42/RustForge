@@ -220,6 +220,7 @@ impl Enrollment {
 
 impl Enrollment {
     /// Restore an enrollment from persisted data (used by infrastructure repos).
+    #[allow(clippy::too_many_arguments)]
     pub fn from_parts(
         id: EnrollmentId,
         user_id: UserId,

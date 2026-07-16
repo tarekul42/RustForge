@@ -61,7 +61,11 @@ async fn main() {
     let app = build_app(state);
 
     let addr = SocketAddr::new(
-        config.server.host.parse().unwrap_or_else(|e| panic!("Invalid host address: {e}")),
+        config
+            .server
+            .host
+            .parse()
+            .unwrap_or_else(|e| panic!("Invalid host address: {e}")),
         config.server.port,
     );
     let listener = TcpListener::bind(addr).await.unwrap_or_else(|e| {

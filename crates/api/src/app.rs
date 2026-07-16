@@ -14,11 +14,7 @@ use utoipa::OpenApi;
 static OPENAPI_SPEC: OnceLock<String> = OnceLock::new();
 
 fn openapi_spec() -> &'static str {
-    OPENAPI_SPEC.get_or_init(|| {
-        ApiDoc::openapi()
-            .to_json()
-            .expect("serialize OpenAPI spec")
-    })
+    OPENAPI_SPEC.get_or_init(|| ApiDoc::openapi().to_json().expect("serialize OpenAPI spec"))
 }
 
 async fn serve_openapi_json() -> Json<serde_json::Value> {

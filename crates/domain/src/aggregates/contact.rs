@@ -117,6 +117,7 @@ impl Contact {
 
 impl Contact {
     /// Restore a contact from persisted data (used by infrastructure repos).
+    #[allow(clippy::too_many_arguments)]
     pub fn from_parts(
         id: ContactId,
         name: String,

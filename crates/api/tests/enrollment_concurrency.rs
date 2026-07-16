@@ -152,7 +152,8 @@ async fn ten_parallel_seat_reservations_on_five_seat_workshop() {
         "Exactly 5 reservations should fail (no seats left)"
     );
     assert_eq!(
-        final_workshop.current_enrollments(), 5,
+        final_workshop.current_enrollments(),
+        5,
         "Workshop should have exactly 5 enrollments after 10 concurrent attempts"
     );
 }
@@ -199,7 +200,8 @@ async fn ten_parallel_seat_releases_never_negative() {
         .expect("Workshop not found");
 
     assert_eq!(
-        final_workshop.current_enrollments(), 0,
+        final_workshop.current_enrollments(),
+        0,
         "Seat count should floor at 0, even with more releases than reservations"
     );
 }

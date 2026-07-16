@@ -140,12 +140,11 @@ pub(crate) async fn health_dashboard(
     let pool_active = pool_size - pool_idle;
 
     // Job queue depth
-    let job_depth = sqlx::query!(
-        r#"SELECT status, COUNT(*)::int8 as "count!" FROM jobs GROUP BY status"#,
-    )
-    .fetch_all(&state.pool)
-    .await
-    .unwrap_or_default();
+    let job_depth =
+        sqlx::query!(r#"SELECT status, COUNT(*)::int8 as "count!" FROM jobs GROUP BY status"#,)
+            .fetch_all(&state.pool)
+            .await
+            .unwrap_or_default();
     let queue_depth: serde_json::Map<String, serde_json::Value> = job_depth
         .into_iter()
         .map(|r| (r.status, json!(r.count)))

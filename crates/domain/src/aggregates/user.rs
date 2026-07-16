@@ -353,6 +353,7 @@ impl User {
 
 impl User {
     /// Restore a user from persisted data (used by infrastructure repos).
+    #[allow(clippy::too_many_arguments)]
     pub fn from_parts(
         id: UserId,
         email: Email,

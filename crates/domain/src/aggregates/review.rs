@@ -222,6 +222,7 @@ impl Review {
 
 impl Review {
     /// Restore a review from persisted data (used by infrastructure repos).
+    #[allow(clippy::too_many_arguments)]
     pub fn from_parts(
         id: ReviewId,
         user_id: UserId,

@@ -252,6 +252,7 @@ impl Workshop {
 
 impl Workshop {
     /// Restore a workshop from persisted data (used by infrastructure repos).
+    #[allow(clippy::too_many_arguments)]
     pub fn from_parts(
         id: WorkshopId,
         title: String,

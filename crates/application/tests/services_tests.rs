@@ -443,16 +443,18 @@ impl EnrollmentRepository for MockEnrollmentRepoEmpty {
         _user_id: UserId,
         _workshop_id: WorkshopId,
     ) -> Result<Vec<sw_domain::aggregates::enrollment::Enrollment>, DomainError> {
-        Ok(vec![sw_domain::aggregates::enrollment::Enrollment::from_parts(
-            EnrollmentId::new(),
-            UserId::new(),
-            WorkshopId::new(),
-            None,
-            1,
-            sw_domain::aggregates::enrollment::EnrollmentStatus::Complete,
-            chrono::Utc::now(),
-            chrono::Utc::now(),
-        )])
+        Ok(vec![
+            sw_domain::aggregates::enrollment::Enrollment::from_parts(
+                EnrollmentId::new(),
+                UserId::new(),
+                WorkshopId::new(),
+                None,
+                1,
+                sw_domain::aggregates::enrollment::EnrollmentStatus::Complete,
+                chrono::Utc::now(),
+                chrono::Utc::now(),
+            ),
+        ])
     }
 
     async fn update_status_cas(
@@ -1231,7 +1233,12 @@ impl WorkshopRepository for MockWorkshopRepoWithOne {
         Ok(())
     }
     async fn find_by_id(&self, id: WorkshopId) -> Result<Option<Workshop>, DomainError> {
-        Ok(self.workshop.lock().unwrap().clone().filter(|w| w.id() == id))
+        Ok(self
+            .workshop
+            .lock()
+            .unwrap()
+            .clone()
+            .filter(|w| w.id() == id))
     }
     async fn find_by_slug(&self, _slug: &str) -> Result<Option<Workshop>, DomainError> {
         Ok(self.workshop.lock().unwrap().clone())
