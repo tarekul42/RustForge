@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE reviews SET rating = $2, title = $3, content = $4, status = $5::text::review_status, updated_at = $6\n               WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int2",
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d79e5a0ddcc63ce5a808959d405a56ff801693de503d5ba4e12f1c4c5c4002d0"
+}

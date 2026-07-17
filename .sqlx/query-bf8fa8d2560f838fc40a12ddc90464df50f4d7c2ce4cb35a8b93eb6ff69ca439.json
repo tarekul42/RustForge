@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO workshops (id, title, slug, description, location, price_cents,\n               start_date, end_date, max_seats, current_enrollments, min_age,\n               category_id, level_id, created_by, created_at, updated_at)\n               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Int8",
+        "Timestamptz",
+        "Timestamptz",
+        "Int4",
+        "Int4",
+        "Int2",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "bf8fa8d2560f838fc40a12ddc90464df50f4d7c2ce4cb35a8b93eb6ff69ca439"
+}

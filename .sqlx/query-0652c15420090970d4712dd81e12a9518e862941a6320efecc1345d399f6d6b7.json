@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE categories SET name = $2, slug = $3, description = $4, thumbnail_url = $5, updated_at = $6\n               WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0652c15420090970d4712dd81e12a9518e862941a6320efecc1345d399f6d6b7"
+}

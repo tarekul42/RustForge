@@ -1,0 +1,110 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, title, slug, description, location, price_cents,\n                      start_date, end_date, max_seats, current_enrollments, min_age,\n                      category_id, level_id, created_by, created_at, updated_at\n               FROM workshops ORDER BY created_at DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "slug",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "location",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "price_cents",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 6,
+        "name": "start_date",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "end_date",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "max_seats",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 9,
+        "name": "current_enrollments",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 10,
+        "name": "min_age",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 11,
+        "name": "category_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 12,
+        "name": "level_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 13,
+        "name": "created_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 14,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 15,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "ce39e09d9c0f984d06d8f5fc8758fbb2a785235c0545e0c79c2544c3eeb42a9e"
+}

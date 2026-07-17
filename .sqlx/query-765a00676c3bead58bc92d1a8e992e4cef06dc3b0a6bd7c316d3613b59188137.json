@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE payments SET status = $3::text::payment_status, updated_at = NOW()\n               WHERE id = $1 AND status = $2::text::payment_status",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "765a00676c3bead58bc92d1a8e992e4cef06dc3b0a6bd7c316d3613b59188137"
+}

@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO otp_codes (id, email, code_hash, expires_at)\n               VALUES (gen_random_uuid(), $1, $2, $3)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        },
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f70b842131e3f1fdd2524c7155dfe1b069e6d2aacd52a7534eeb376ad72a1997"
+}

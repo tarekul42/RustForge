@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO enrollments (id, user_id, workshop_id, payment_id, student_count, status, created_at, updated_at)\n                   VALUES ($1, $2, $3, $4, $5, 'pending', NOW(), NOW())",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4cdaefcf874a3c375d2dd001b5ab0c98ccfe4186abcc0648f4a91cf56a8ddb3b"
+}

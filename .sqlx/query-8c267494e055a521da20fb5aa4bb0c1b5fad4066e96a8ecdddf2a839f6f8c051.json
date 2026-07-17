@@ -1,0 +1,65 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, user_id, workshop_id, payment_id, student_count, status::text as \"status!\", created_at, updated_at\n               FROM enrollments\n               WHERE user_id = $1 AND workshop_id = $2\n               ORDER BY created_at DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "workshop_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "payment_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "student_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "status!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      null,
+      false,
+      false
+    ]
+  },
+  "hash": "8c267494e055a521da20fb5aa4bb0c1b5fad4066e96a8ecdddf2a839f6f8c051"
+}

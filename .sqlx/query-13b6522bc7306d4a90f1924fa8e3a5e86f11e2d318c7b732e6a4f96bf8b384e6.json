@@ -1,0 +1,70 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, enrollment_id, transaction_id, amount_cents,\n                      payment_gateway_data, invoice_url, status::text as \"status!\", created_at, updated_at\n               FROM payments WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "enrollment_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "transaction_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "amount_cents",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "payment_gateway_data",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 5,
+        "name": "invoice_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "status!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      null,
+      false,
+      false
+    ]
+  },
+  "hash": "13b6522bc7306d4a90f1924fa8e3a5e86f11e2d318c7b732e6a4f96bf8b384e6"
+}

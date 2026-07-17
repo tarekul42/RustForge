@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE workshops SET title = $2, slug = $3, description = $4, location = $5,\n               price_cents = $6, start_date = $7, end_date = $8, max_seats = $9,\n               current_enrollments = $10, min_age = $11, category_id = $12, level_id = $13,\n               updated_at = $14\n               WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Int8",
+        "Timestamptz",
+        "Timestamptz",
+        "Int4",
+        "Int4",
+        "Int2",
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "fce38ed8444c0e638c348ad578b0d731e831174f897ff5fcaed44a55000500f6"
+}

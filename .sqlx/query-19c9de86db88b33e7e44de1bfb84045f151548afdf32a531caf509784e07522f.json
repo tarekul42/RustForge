@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO payments (id, enrollment_id, transaction_id, amount_cents,\n               payment_gateway_data, invoice_url, status, created_at, updated_at)\n               VALUES ($1, $2, $3, $4, $5, $6, $7::text::payment_status, $8, $9)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Int8",
+        "Jsonb",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "19c9de86db88b33e7e44de1bfb84045f151548afdf32a531caf509784e07522f"
+}

@@ -5,6 +5,7 @@
 .idea/
 .vscode/
 *.sqlx
+!.sqlx/
 
 IMPLEMENTATION_BLUEPRINT.md
 Rust_Curriculum/

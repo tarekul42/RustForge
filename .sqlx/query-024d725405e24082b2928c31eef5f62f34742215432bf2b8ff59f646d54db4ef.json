@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE enrollments SET status = $3::text::enrollment_status, updated_at = NOW()\n               WHERE id = $1 AND status = $2::text::enrollment_status",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "024d725405e24082b2928c31eef5f62f34742215432bf2b8ff59f646d54db4ef"
+}

@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM otp_codes WHERE email = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "cb8345407674d6def1dab59436726a3e494e8befefd70387387b2ab15a0cd72d"
+}

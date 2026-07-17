@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE workshops\n               SET current_enrollments = GREATEST(current_enrollments - 1, 0), updated_at = NOW()\n               WHERE id = $1 AND current_enrollments > 0",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "676250267cf15a38489b841fb4da1626f8783b800c84553c98c727e7d9a54175"
+}

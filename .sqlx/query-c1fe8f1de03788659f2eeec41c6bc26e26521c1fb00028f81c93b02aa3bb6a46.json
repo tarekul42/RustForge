@@ -1,0 +1,109 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, email as \"email!\", name, password_hash, phone, picture_url, age, address,\n                      role::text as \"role!\", status::text as \"status!\", is_verified, expertise, bio, created_at, updated_at\n               FROM users ORDER BY created_at DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "email!",
+        "type_info": {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "password_hash",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "phone",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "picture_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "age",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 7,
+        "name": "address",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "role!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "status!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "is_verified",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 11,
+        "name": "expertise",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "bio",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 14,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      null,
+      null,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "c1fe8f1de03788659f2eeec41c6bc26e26521c1fb00028f81c93b02aa3bb6a46"
+}
