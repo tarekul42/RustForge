@@ -1,0 +1,9 @@
+# Tarpaulin coverage configuration
+# Single `exclude-files` key with a TOML array (not duplicate keys)
+
+[tarpaulin]
+exclude-files = [
+    "crates/api/src/main.rs",
+    "crates/worker/src/main.rs",
+    "target/*",
+]
